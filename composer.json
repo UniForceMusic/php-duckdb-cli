@@ -1,0 +1,11 @@
+{
+    "name": "uniforcemusic/php-duckdb",
+    "description": "A DuckDB interface for PHP",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "UniForceMusic\\PHPDuckDB\\": "src/"
+        }
+    },
+    "require": {}
+}
