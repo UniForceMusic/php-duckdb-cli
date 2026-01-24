@@ -1,9 +1,14 @@
 <?php
 
-use UniForceMusic\PHPDuckDB\Connection;
+use UniForceMusic\PHPDuckDB\DuckDB;
 
 include 'vendor/autoload.php';
 
-$connection = new Connection('duckdb', 'database.db');
+$duckDB = new DuckDB('database.db');
 
-echo $connection->execute('SELECT * FROM information_schema.tables');
+$result = $duckDB->query('INSERT INTO test1 (id, name) VALUES (1, \'test1\')');
+
+print_r([
+    'columns' => $result->columns(),
+    'rows' => $result->rows()
+]);

@@ -6,17 +6,21 @@ use UniForceMusic\PHPDuckDB\Exceptions\ConnectionException;
 
 class Connection
 {
+    public const string REGEX_RESULT_PATTERN = '/^\┌[\─\┬]+\┐[\S\s]*\└[\─\┴]+\┘\s*D?$/m';
+    public const string REGEX_ERROR_PATTERN = '/^[A-Za-z]+\sError\:[\S\s]+D?$/m';
     public const int PIPE_STDIN = 0;
     public const int PIPE_STDOUT = 1;
     public const int PIPE_STDERR = 2;
+    public const int FREAD_SIZE = 8192;
+    public const int USLEEP_TIME = 100;
 
-    protected $process;
+    protected mixed $process;
     protected array $pipes = [];
 
     public function __construct(string $binary, string $file)
     {
         $command = sprintf(
-            '%s %s',
+            '%s -noheader %s',
             escapeshellarg($binary),
             escapeshellarg($file)
         );
@@ -38,45 +42,52 @@ class Connection
         foreach ($this->pipes as $pipe) {
             stream_set_blocking($pipe, false);
         }
-
-        fwrite($this->pipes[static::PIPE_STDIN], '');
     }
 
-    public function execute(string $sql): string
+    public function execute(string $sql): Result|Error
     {
-        if (!preg_match('/\;\s*$/', $sql)) {
+        if (!preg_match('/;\s*$/', $sql)) {
             $sql .= ';';
         }
 
-        fwrite($this->pipes[static::PIPE_STDIN], $sql);
+        fwrite($this->pipes[self::PIPE_STDIN], $sql);
+        fwrite($this->pipes[self::PIPE_STDIN], PHP_EOL);
 
-        $response = null;
+        $output = '';
 
         while (true) {
-            $stdout = stream_get_contents($this->pipes[static::PIPE_STDOUT]);
-            $stderr = stream_get_contents($this->pipes[static::PIPE_STDERR]);
+            $output .= fread($this->pipes[self::PIPE_STDOUT], static::FREAD_SIZE);
+            $output .= fread($this->pipes[self::PIPE_STDERR], static::FREAD_SIZE);
 
-            echo $stdout . $stderr;
-            continue;
+            $output = trim($output);
 
-            if (empty($stdout . $stderr)) {
-                if (!$response) {
-                    usleep(1);
-                    continue;
-                }
-
+            if ($this->isFinishedGeneratingOutput($output)) {
                 break;
             }
 
-            if (is_null($response)) {
-                $response = '';
-            }
-
-            $response .= $stdout;
-            $response .= $stderr;
+            usleep(static::USLEEP_TIME);
         }
 
-        return $response;
+        return $this->isError($output)
+            ? new Error($output)
+            : new Result($output);
+    }
+
+    protected function isFinishedGeneratingOutput(string $output): bool
+    {
+        return $this->isError($output)
+            || $this->isResult($output)
+            || (bool) preg_match('/\s*D\s*$/', $output);
+    }
+
+    protected function isResult(string $output): bool
+    {
+        return (bool) preg_match(static::REGEX_RESULT_PATTERN, $output);
+    }
+
+    protected function isError(string $output): bool
+    {
+        return (bool) preg_match(static::REGEX_ERROR_PATTERN, $output);
     }
 
     public function __destruct()
