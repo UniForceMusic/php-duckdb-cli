@@ -1,6 +1,6 @@
 <?php
 
-namespace UniForceMusic\PHPDuckDB\Exceptions;
+namespace UniForceMusic\PHPDuckDBCLI\Exceptions;
 
 use Exception;
 

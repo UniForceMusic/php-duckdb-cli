@@ -1,29 +1,34 @@
 <?php
 
-namespace UniForceMusic\PHPDuckDB;
+namespace UniForceMusic\PHPDuckDBCLI;
 
-use UniForceMusic\PHPDuckDB\Exceptions\ConnectionException;
+use UniForceMusic\PHPDuckDBCLI\Exceptions\ConnectionException;
+use UniForceMusic\PHPDuckDBCLI\Exceptions\DuckDBException;
 
 class Connection
 {
-    public const string REGEX_RESULT_PATTERN = '/^\┌[\─\┬]+\┐[\S\s]*\└[\─\┴]+\┘\s*D?$/m';
-    public const string REGEX_ERROR_PATTERN = '/^[A-Za-z]+\sError\:[\S\s]+D?$/m';
+    public const string REGEX_RESULT_PATTERN = '/^(\┌[\─\┬]+\┐[\S\s]*?\└[\─\┴]+\┘)$\s*/m';
+    public const string REGEX_ERROR_PATTERN = '/^([A-Za-z]+\sError\:?[\S\s]+)/m';
+    public const string REGEX_TAIL_PATTERN = '/^(\┌[\─\┬]+\┐?[\S\s]*%s?[\S\s]*?\└[\─\┴]+\┘)$\s*/m';
     public const int PIPE_STDIN = 0;
     public const int PIPE_STDOUT = 1;
     public const int PIPE_STDERR = 2;
-    public const int FREAD_SIZE = 8192;
     public const int USLEEP_TIME = 100;
 
-    protected mixed $process;
-    protected array $pipes = [];
+    private mixed $process;
+    private array $pipes = [];
 
-    public function __construct(string $binary, string $file)
+    public function __construct(string $binary, ?string $file)
     {
         $command = sprintf(
-            '%s -noheader %s',
-            escapeshellarg($binary),
-            escapeshellarg($file)
+            '%s -noheader',
+            escapeshellarg($binary)
         );
+
+        if ($file) {
+            $command .= ' ';
+            $command .= escapeshellarg($file);
+        }
 
         $this->process = proc_open(
             $command,
@@ -50,44 +55,90 @@ class Connection
             $sql .= ';';
         }
 
+        [$tailStatement, $tailHash] = $this->generateTailStatement();
+
         fwrite($this->pipes[self::PIPE_STDIN], $sql);
+        fwrite($this->pipes[self::PIPE_STDIN], $tailStatement);
         fwrite($this->pipes[self::PIPE_STDIN], PHP_EOL);
 
         $output = '';
 
         while (true) {
-            $output .= fread($this->pipes[self::PIPE_STDOUT], static::FREAD_SIZE);
-            $output .= fread($this->pipes[self::PIPE_STDERR], static::FREAD_SIZE);
+            $output .= stream_get_contents($this->pipes[self::PIPE_STDOUT]);
+            $output .= stream_get_contents($this->pipes[self::PIPE_STDERR]);
 
-            $output = trim($output);
+            if (!proc_get_status($this->process)['running']) {
+                throw new DuckDBException('DuckDB process has quit unexpectedly');
+            }
 
-            if ($this->isFinishedGeneratingOutput($output)) {
+            $output = $this->isFinishedGeneratingOutput($output, $tailHash);
+
+            if (!is_null($output)) {
                 break;
             }
 
             usleep(static::USLEEP_TIME);
         }
 
-        return $this->isError($output)
+        $output ??= '';
+
+        return $this->isErrorOutput($output)
             ? new Error($output)
             : new Result($output);
     }
 
-    protected function isFinishedGeneratingOutput(string $output): bool
+    private function generateTailStatement(): array
     {
-        return $this->isError($output)
-            || $this->isResult($output)
-            || (bool) preg_match('/\s*D\s*$/', $output);
+        $hash = md5(microtime());
+
+        return [
+            "SELECT '{$hash}' AS _;",
+            $hash
+        ];
     }
 
-    protected function isResult(string $output): bool
+    private function isFinishedGeneratingOutput(string $output, string $tailHash): ?string
     {
-        return (bool) preg_match(static::REGEX_RESULT_PATTERN, $output);
+        $output = $this->isResultOutput($output) ?? $this->isErrorOutput($output);
+
+        if (is_null($output)) {
+            return null;
+        }
+
+        return !$this->isTailOutput($output, $tailHash) ? $output : '';
     }
 
-    protected function isError(string $output): bool
+    private function isResultOutput(string $output): ?string
     {
-        return (bool) preg_match(static::REGEX_ERROR_PATTERN, $output);
+        $isMatch = (bool) preg_match_all(static::REGEX_RESULT_PATTERN, $output, $matches);
+
+        if (!$isMatch) {
+            return null;
+        }
+
+        return $matches[1][0];
+    }
+
+    private function isErrorOutput(string $output): ?string
+    {
+        $isMatch = (bool) preg_match_all(static::REGEX_ERROR_PATTERN, $output, $matches);
+
+        if (!$isMatch) {
+            return null;
+        }
+
+        return $matches[1][0];
+    }
+
+    private function isTailOutput(string $output, string $tailHash): bool
+    {
+        return (bool) preg_match_all(
+            sprintf(
+                static::REGEX_TAIL_PATTERN,
+                $tailHash
+            ),
+            $output
+        );
     }
 
     public function __destruct()

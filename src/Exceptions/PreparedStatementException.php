@@ -4,6 +4,6 @@ namespace UniForceMusic\PHPDuckDBCLI\Exceptions;
 
 use Exception;
 
-class DuckDBException extends Exception
+class PreparedStatementException extends Exception
 {
 }

@@ -1,10 +1,10 @@
 <?php
 
-namespace UniForceMusic\PHPDuckDB;
+namespace UniForceMusic\PHPDuckDBCLI;
 
 class Error
 {
-    public function __construct(protected string $output)
+    public function __construct(private string $output)
     {
     }
 

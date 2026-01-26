@@ -1,16 +1,17 @@
 <?php
 
-namespace UniForceMusic\PHPDuckDB;
+namespace UniForceMusic\PHPDuckDBCLI;
 
 class Result
 {
-    protected bool $parsed = false;
-    protected array $columnLengths = [];
-    protected array $columns = [];
-    protected array $rows = [];
+    private bool $parsed = false;
+    private array $columnLengths = [];
+    private array $columns = [];
+    private array $rows = [];
 
-    public function __construct(protected string $output)
+    public function __construct(private string $output)
     {
+        $this->parsed = empty($this->output);
     }
 
     public function columns(): array
@@ -31,7 +32,7 @@ class Result
         return $this->rows;
     }
 
-    protected function parse(): void
+    private function parse(): void
     {
         $lines = explode(PHP_EOL, $this->output);
 
@@ -68,8 +69,13 @@ class Result
 
         if (!preg_match('/\│\s*0\srows\s*\│/', implode('', $rowLines))) {
             foreach ($rowLines as $line) {
-                if (str_contains($line, '─'))
+                if (str_contains($line, '─')) {
                     continue;
+                }
+
+                if (preg_match('/\S\s*[0-9]+\srows\s*\S/', $line)) {
+                    continue;
+                }
 
                 $row = [];
 
@@ -79,6 +85,7 @@ class Result
                     $row[$columnName] = trim(mb_substr($line, $position, $length));
                     $position += $length + 1;
                 }
+
                 $this->rows[] = $row;
             }
         }
