@@ -7,6 +7,12 @@ Because of the limitations of the command line interface, certain features like 
 
 ## Setup guide
 
+Install the package using the following command:
+
+```
+composer require uniforcemusic/php-duckdb-cli
+```
+
 Start by creating a new DuckDB instance:
 
 ```php
