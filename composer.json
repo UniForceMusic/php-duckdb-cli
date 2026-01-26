@@ -1,5 +1,5 @@
 {
-    "name": "uniforcemusic/php-duckdb",
+    "name": "uniforcemusic/php-duckdb-cli",
     "description": "A DuckDB interface for PHP",
     "type": "library",
     "autoload": {
