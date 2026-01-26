@@ -50,13 +50,7 @@ class DuckDB
     {
         $preparedStatement = new PreparedStatement($query, $params);
 
-        $result = $this->connection->execute($preparedStatement->toSql());
-
-        if ($result instanceof Error) {
-            throw new DuckDBException($result->getError());
-        }
-
-        return $result;
+        return $this->query($preparedStatement->toSql());
     }
 
     public function beginTransation(): void

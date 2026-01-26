@@ -8,7 +8,7 @@ use UniForceMusic\PHPDuckDBCLI\Exceptions\DuckDBException;
 class Connection
 {
     public const string REGEX_RESULT_PATTERN = '/^(\┌[\─\┬]+\┐[\S\s]*?\└[\─\┴]+\┘)$\s*/m';
-    public const string REGEX_ERROR_PATTERN = '/^([A-Za-z]+\sError\:?[\S\s]+)/m';
+    public const string REGEX_ERROR_PATTERN = '/^([A-Za-z\-\_\s]+\sError\:?[\S\s]+)/m';
     public const string REGEX_TAIL_PATTERN = '/^(\┌[\─\┬]+\┐?[\S\s]*%s?[\S\s]*?\└[\─\┴]+\┘)$\s*/m';
     public const int PIPE_STDIN = 0;
     public const int PIPE_STDOUT = 1;
