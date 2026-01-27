@@ -78,7 +78,7 @@ class Connection
                 break;
             }
 
-            if ($errorOutput) {
+            if (!empty($errorOutput)) {
                 throw new DuckDBException($errorOutput);
             }
 
