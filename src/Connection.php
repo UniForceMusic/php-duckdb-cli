@@ -2,20 +2,15 @@
 
 namespace UniForceMusic\PHPDuckDBCLI;
 
+use UniForceMusic\PHPDuckDBCLI\Enums\PipesEnum;
 use UniForceMusic\PHPDuckDBCLI\Exceptions\ConnectionException;
 use UniForceMusic\PHPDuckDBCLI\Exceptions\DuckDBException;
 
 class Connection
 {
-    public const int PIPE_STDIN = 0;
-    public const int PIPE_STDOUT = 1;
-    public const int PIPE_STDERR = 2;
-    public const int USLEEP_TIME = 100;
-    public const string REGEX_CHANGES_PATTERN = '/changes\:\s*[0-9]+\s*total_changes\:\s*[0-9]+\s*$/';
-    public const string REGEX_ERROR_PATTERN = '/^([A-Za-z\-\_\s]*Error\:?[\S\s]+)$/im';
-
     private mixed $process;
     private array $pipes = [];
+    private ?int $timeout = null;
 
     public function __construct(string $binary, ?string $file)
     {
@@ -48,16 +43,34 @@ class Connection
         }
     }
 
+    public function removeTimeout(): void
+    {
+        $this->timeout = null;
+    }
+
+    public function setTimeout(int $microseconds): void
+    {
+        $this->timeout = $microseconds;
+    }
+
     public function execute(string $sql, bool $addSemicolon = true, bool $expectResult = true): ?Result
     {
-        $this->readStreams();
+        $startTime = microtime(true);
+
+        while (true) {
+            $this->throwExceptionIfTimedOut($startTime);
+
+            if (empty($this->readStreams())) {
+                break;
+            }
+        }
 
         if ($addSemicolon && !preg_match('/;\s*$/', $sql)) {
             $sql .= ';';
         }
 
-        fwrite($this->pipes[self::PIPE_STDIN], $sql);
-        fwrite($this->pipes[self::PIPE_STDIN], PHP_EOL);
+        fwrite($this->pipes[PipesEnum::STDIN->value], $sql);
+        fwrite($this->pipes[PipesEnum::STDIN->value], PHP_EOL);
 
         if (!$expectResult) {
             return null;
@@ -66,6 +79,8 @@ class Connection
         $output = '';
 
         while (true) {
+            $this->throwExceptionIfTimedOut($startTime);
+
             $output .= $this->readStreams();
 
             if (!proc_get_status($this->process)['running']) {
@@ -81,8 +96,6 @@ class Connection
             if (!empty($errorOutput)) {
                 throw new DuckDBException($errorOutput);
             }
-
-            usleep(static::USLEEP_TIME);
         }
 
         return new Result($output);
@@ -90,17 +103,28 @@ class Connection
 
     private function readStreams(): string
     {
-        return (string) stream_get_contents($this->pipes[self::PIPE_STDOUT])
-            . (string) stream_get_contents($this->pipes[self::PIPE_STDERR]);
+        return (string) stream_get_contents($this->pipes[PipesEnum::STDOUT->value])
+            . (string) stream_get_contents($this->pipes[PipesEnum::STDERR->value]);
+    }
+
+    private function throwExceptionIfTimedOut(float $startTime): void
+    {
+        if (!$this->timeout) {
+            return;
+        }
+
+        if ((microtime(true) - $startTime) * 10000 > $this->timeout) {
+            throw new ConnectionException('connection timed out');
+        }
     }
 
     private function hasFinishedGeneratingOutput(string $output): array
     {
-        if ((bool) preg_match_all(static::REGEX_ERROR_PATTERN, $output, $matches)) {
+        if ((bool) preg_match_all('/^([A-Za-z\-\_\s]*Error\:?[\S\s]+)$/im', $output, $matches)) {
             return [false, $matches[1][0]];
         }
 
-        if ((bool) preg_match_all(static::REGEX_CHANGES_PATTERN, $output, $matches)) {
+        if ((bool) preg_match_all('/changes\:\s*[0-9]+\s*total_changes\:\s*[0-9]+\s*$/', $output, $matches)) {
             return [true, false];
         }
 

@@ -60,7 +60,8 @@ class Result
         $columnTypesLine = $lines[2];
         $rowLines = array_slice(
             $lines,
-            4
+            5,
+            -1
         );
 
         $boxTops = explode(
@@ -92,10 +93,6 @@ class Result
 
         if (!preg_match('/\│\s*0\srows\s*\│/', implode('', $rowLines))) {
             foreach ($rowLines as $line) {
-                if (str_contains($line, '─')) {
-                    continue;
-                }
-
                 if (preg_match('/\S\s*[0-9]+\srows\s*\S/', $line)) {
                     continue;
                 }

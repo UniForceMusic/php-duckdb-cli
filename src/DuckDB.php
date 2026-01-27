@@ -3,10 +3,10 @@
 namespace UniForceMusic\PHPDuckDBCLI;
 
 use Throwable;
-use UniForceMusic\PHPDuckDBCLI\Exceptions\DuckDBException;
 
 class DuckDB
 {
+    public const string BINARY = 'duckdb';
     public const array ESCAPE_CHARS = [
         '\\' => '\\\\',
         "\n" => '\\n',
@@ -21,14 +21,35 @@ class DuckDB
 
     private Connection $connection;
     private bool $inTransation = false;
+    private ?int $timeout = null;
+
+    public static function memory(string $binary = self::BINARY): static
+    {
+        return new static(null, $binary);
+    }
+
+    public static function file(string $file, string $binary = self::BINARY): static
+    {
+        return new static($file, $binary);
+    }
 
     public function __construct(
         private ?string $file = null,
-        private string $binary = 'duckdb'
+        private string $binary = self::BINARY
     ) {
         $this->connection = new Connection($binary, $file);
 
         $this->initConnection();
+    }
+
+    public function removeTimeout(): void
+    {
+        $this->connection->removeTimeout();
+    }
+
+    public function setTimeout(int $microseconds): void
+    {
+        $this->connection->setTimeout($microseconds);
     }
 
     public function dotCommand(string $command): void
