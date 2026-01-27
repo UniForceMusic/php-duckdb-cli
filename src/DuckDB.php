@@ -2,7 +2,6 @@
 
 namespace UniForceMusic\PHPDuckDBCLI;
 
-use DateTimeInterface;
 use Throwable;
 use UniForceMusic\PHPDuckDBCLI\Exceptions\DuckDBException;
 
@@ -28,29 +27,32 @@ class DuckDB
         private string $binary = 'duckdb'
     ) {
         $this->connection = new Connection($binary, $file);
+
+        $this->initConnection();
     }
 
-    public function exec(string $statement): void
+    public function dotCommand(string $command): void
     {
-        $this->connection->execute($statement);
+        $this->exec($command, false, false);
     }
 
-    public function query(string $query): Result
+    public function exec(string $statement, bool $addSemicolon = true, bool $expectResult = true): void
     {
-        $result = $this->connection->execute($query);
-
-        if ($result instanceof Error) {
-            throw new DuckDBException($result->getError());
-        }
-
-        return $result;
+        $this->connection->execute($statement, $addSemicolon, $expectResult);
     }
 
-    public function prepared(string $query, array $params = []): Result
+    public function query(string $query, bool $addSemicolon = true, bool $expectResult = true): ?Result
     {
-        $preparedStatement = new PreparedStatement($query, $params);
+        return $this->connection->execute($query, $addSemicolon, $expectResult);
+    }
 
-        return $this->query($preparedStatement->toSql());
+    public function prepared(string $query, array $params = [], bool $addSemicolon = true, bool $expectResult = true): ?Result
+    {
+        return $this->query(
+            (new PreparedStatement($query, $params))->toSql(),
+            $addSemicolon,
+            $expectResult
+        );
     }
 
     public function beginTransation(): void
@@ -87,24 +89,22 @@ class DuckDB
         return $this->inTransation;
     }
 
-    public static function compileValueToSQL(null|bool|int|float|string|DateTimeInterface $value): string
+    private function initConnection(): void
     {
-        if (is_null($value)) {
-            return 'NULL';
-        }
+        $this->dotCommand('.changes on');
 
-        if (is_bool($value)) {
-            return var_export($value);
-        }
+        $this->dotCommand(
+            sprintf(
+                '.maxrows %d',
+                PHP_INT_MAX
+            )
+        );
 
-        if (is_string($value)) {
-            return "'" . strtr($value, [...static::ESCAPE_CHARS, "'" => "''"]) . "'";
-        }
-
-        if ($value instanceof DateTimeInterface) {
-            return static::compileValueToSQL($value->format('Y-m-d H:i:s.uP'));
-        }
-
-        return (string) $value;
+        $this->dotCommand(
+            sprintf(
+                '.maxwidth %d',
+                PHP_INT_MAX
+            )
+        );
     }
 }

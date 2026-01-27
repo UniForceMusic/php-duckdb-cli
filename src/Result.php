@@ -4,14 +4,33 @@ namespace UniForceMusic\PHPDuckDBCLI;
 
 class Result
 {
+    public const string REGEX_RESULT_PATTERN = '/^(\┌[\─\┬]+\┐[\S\s]*?\└[\─\┴]+\┘)$\s*/m';
+
     private bool $parsed = false;
-    private array $columnLengths = [];
     private array $columns = [];
     private array $rows = [];
 
     public function __construct(private string $output)
     {
-        $this->parsed = empty($this->output);
+        if (empty($this->output)) {
+            $this->parsed = true;
+
+            return;
+        }
+
+        $isTableOutput = (bool) preg_match_all(
+            static::REGEX_RESULT_PATTERN,
+            $output,
+            $matches
+        );
+
+        if (!$isTableOutput) {
+            $this->parsed = true;
+
+            return;
+        }
+
+        $this->output = $matches[1][0];
     }
 
     public function columns(): array
@@ -53,6 +72,10 @@ class Result
             )
         );
 
+        $columnLengths = [];
+        $columns = [];
+        $rows = [];
+
         $position = 1;
 
         foreach ($boxTops as $boxTop) {
@@ -61,8 +84,8 @@ class Result
             $columnName = trim(mb_substr($columnNamesLine, $position, $length));
             $columnType = trim(mb_substr($columnTypesLine, $position, $length));
 
-            $this->columnLengths[$columnName] = $length;
-            $this->columns[$columnName] = $columnType;
+            $columnLengths[$columnName] = $length;
+            $columns[$columnName] = $columnType;
 
             $position += $length + 1;
         }
@@ -81,15 +104,17 @@ class Result
 
                 $position = 1;
 
-                foreach ($this->columnLengths as $columnName => $length) {
+                foreach ($columnLengths as $columnName => $length) {
                     $row[$columnName] = trim(mb_substr($line, $position, $length));
                     $position += $length + 1;
                 }
 
-                $this->rows[] = $row;
+                $rows[] = $row;
             }
         }
 
         $this->parsed = true;
+        $this->columns = $columns;
+        $this->rows = $rows;
     }
 }

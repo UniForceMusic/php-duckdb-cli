@@ -2,6 +2,7 @@
 
 namespace UniForceMusic\PHPDuckDBCLI;
 
+use DateTimeInterface;
 use Throwable;
 use UniForceMusic\PHPDuckDBCLI\Exceptions\PreparedStatementException;
 
@@ -26,7 +27,7 @@ class PreparedStatement
         $this->namedParamsToQuestionMarks();
 
         $params = array_map(
-            fn(mixed $param): mixed => DuckDB::compileValueToSQL($param),
+            fn(mixed $param): mixed => $this->compileValueToSQL($param),
             $this->params
         );
 
@@ -146,5 +147,26 @@ class PreparedStatement
     private function throwNamedParamDoesNotExistException(string $key): void
     {
         throw new PreparedStatementException("named param {$key} does not exist");
+    }
+
+    private function compileValueToSQL(null|bool|int|float|string|DateTimeInterface $value): string
+    {
+        if (is_null($value)) {
+            return 'NULL';
+        }
+
+        if (is_bool($value)) {
+            return var_export($value);
+        }
+
+        if (is_string($value)) {
+            return "'" . strtr($value, [...static::ESCAPE_CHARS, "'" => "''"]) . "'";
+        }
+
+        if ($value instanceof DateTimeInterface) {
+            return $this->compileValueToSQL($value->format('Y-m-d H:i:s.uP'));
+        }
+
+        return (string) $value;
     }
 }
