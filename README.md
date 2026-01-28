@@ -19,6 +19,10 @@ Start by creating a new DuckDB instance:
 use UniForceMusic\PHPDuckDBCLI\DuckDB;
 
 $duckdb = new DuckDB('database.db');
+
+// Also possible to initialize using static methods
+// DuckDB::file('/path/to/file');
+// DuckDB::memory();
 ```
 
 Argument 1 (file) can be null if you want to use an in memory database.
