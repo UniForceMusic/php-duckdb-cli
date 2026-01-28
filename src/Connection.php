@@ -69,8 +69,7 @@ class Connection
             $sql .= ';';
         }
 
-        fwrite($this->pipes[PipesEnum::STDIN->value], $sql);
-        fwrite($this->pipes[PipesEnum::STDIN->value], PHP_EOL);
+        fwrite($this->pipes[PipesEnum::STDIN->value], $sql . PHP_EOL);
 
         if (!$expectResult) {
             return null;

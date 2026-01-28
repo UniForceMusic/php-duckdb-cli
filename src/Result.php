@@ -103,9 +103,10 @@ class Result
 
                 foreach ($columnLengths as $columnName => $length) {
                     $type = strtolower($columns[$columnName]);
-                    $value = rtrim(mb_substr($line, $position, $length));
+                    $value = rtrim(mb_substr($line, $position + 1, $length - 1));
 
                     $row[$columnName] = $this->castValue($type, $value);
+
                     $position += $length + 1;
                 }
 
