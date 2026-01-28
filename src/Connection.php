@@ -58,7 +58,10 @@ class Connection
         $startTime = microtime(true);
 
         while (true) {
-            $this->throwExceptionIfTimedOut($startTime);
+            $this->throwExceptionIfTimedOut(
+                $startTime,
+                'waiting for remaining output to finish streaming'
+            );
 
             if (empty($this->readStreams())) {
                 break;
@@ -78,7 +81,10 @@ class Connection
         $output = '';
 
         while (true) {
-            $this->throwExceptionIfTimedOut($startTime);
+            $this->throwExceptionIfTimedOut(
+                $startTime,
+                "executing '{$sql}'"
+            );
 
             $output .= $this->readStreams();
 
@@ -106,14 +112,14 @@ class Connection
             . (string) stream_get_contents($this->pipes[PipesEnum::STDERR->value]);
     }
 
-    private function throwExceptionIfTimedOut(float $startTime): void
+    private function throwExceptionIfTimedOut(float $startTime, string $reason): void
     {
         if (!$this->timeout) {
             return;
         }
 
         if ((microtime(true) - $startTime) * 10000 > $this->timeout) {
-            throw new ConnectionException('connection timed out');
+            throw new ConnectionException("connection timed out while {$reason}");
         }
     }
 

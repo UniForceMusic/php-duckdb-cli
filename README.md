@@ -57,6 +57,10 @@ $duckdb->rollbackTransaction(): void;
 $duckdb->inTransaction(): bool;
 ```
 
+## Tests
+
+To run the tests, run `composer test` in your console
+
 ## Notice
 
 There may be response case that this library does not handle. To prevent the system hanging, you can set a timeout.
