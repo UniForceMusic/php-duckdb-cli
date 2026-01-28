@@ -8,6 +8,17 @@ use UniForceMusic\PHPDuckDBCLI\Exceptions\PreparedStatementException;
 
 class PreparedStatement
 {
+    public const array ESCAPE_CHARS = [
+        '\\' => '\\\\',
+        "\n" => '\\n',
+        "\r" => '\\r',
+        "\t" => '\\t',
+        "\0" => '',
+        "\b" => '\\b',
+        "\x1A" => '\\x1A',
+        "\f" => '\\f',
+        "\v" => '\\v'
+    ];
     public const string INI_PCRE_JIT = 'pcre.jit';
     public const string REGEX_PATTERN_QUESTION_MARKS = '/(?:\'(?:\\\\.|[^\\\\\'])*\'|\"(?:\\\\.|[^\\\\\"])*\"|(\?)(?=(?:[^\'\"\\\\]|\'(?:\\\\.|[^\\\\\'])*\'|\"(?:\\\\.|[^\\\\\"])*\"|)*$)|(?:\-\-[^\r\n]*|\/\*[\s\S]*?\*\/|\#.*))/m';
     public const string REGEX_PATTERN_NAMED_PARAMS = '/(?:\'(?:\\\\.|[^\\\\\'])*\'|\"(?:\\\\.|[^\\\\\"])*\"|(\:\w+)(?=(?:[^\'\"\\\\]|\'(?:\\\\.|[^\\\\\'])*\'|\"(?:\\\\.|[^\\\\\"])*\"|)*$)|(?:\-\-[^\r\n]*|\/\*[\s\S]*?\*\/|\#.*))/m';

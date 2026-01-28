@@ -18,10 +18,10 @@ class Result
             return;
         }
 
-        $isTableOutput = (bool) preg_match_all(
+        $isTableOutput = (bool) preg_match(
             static::REGEX_RESULT_PATTERN,
             $output,
-            $matches
+            $match
         );
 
         if (!$isTableOutput) {
@@ -30,7 +30,7 @@ class Result
             return;
         }
 
-        $this->output = $matches[1][0];
+        $this->output = $match[1];
     }
 
     public function columns(): array
@@ -60,7 +60,7 @@ class Result
         $columnTypesLine = $lines[2];
         $rowLines = array_slice(
             $lines,
-            5,
+            4,
             -1
         );
 
@@ -102,7 +102,10 @@ class Result
                 $position = 1;
 
                 foreach ($columnLengths as $columnName => $length) {
-                    $row[$columnName] = trim(mb_substr($line, $position, $length));
+                    $type = strtolower($columns[$columnName]);
+                    $value = rtrim(mb_substr($line, $position, $length));
+
+                    $row[$columnName] = $this->castValue($type, $value);
                     $position += $length + 1;
                 }
 
@@ -113,5 +116,24 @@ class Result
         $this->parsed = true;
         $this->columns = $columns;
         $this->rows = $rows;
+    }
+
+    private function castValue(string $type, string $value): mixed
+    {
+        if (strtolower($value) == 'null') {
+            return null;
+        }
+
+        if (str_contains($type, 'int')) {
+            return (int) $value;
+        }
+
+        foreach (['real', 'float', 'numeric', 'number'] as $wildcard) {
+            if (str_contains($type, $wildcard)) {
+                return (float) $value;
+            }
+        }
+
+        return $value;
     }
 }

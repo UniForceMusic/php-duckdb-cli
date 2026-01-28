@@ -120,11 +120,11 @@ class Connection
 
     private function hasFinishedGeneratingOutput(string $output): array
     {
-        if ((bool) preg_match_all('/^([A-Za-z\-\_\s]*Error\:?[\S\s]+)$/im', $output, $matches)) {
-            return [false, $matches[1][0]];
+        if ((bool) preg_match('/^([A-Za-z\-\_\s]*Error\:?[\S\s]+)$/im', $output, $match)) {
+            return [false, $match[1]];
         }
 
-        if ((bool) preg_match_all('/changes\:\s*[0-9]+\s*total_changes\:\s*[0-9]+\s*$/', $output, $matches)) {
+        if ((bool) preg_match('/changes\:\s*[0-9]+\s*total_changes\:\s*[0-9]+\s*$/', $output)) {
             return [true, false];
         }
 

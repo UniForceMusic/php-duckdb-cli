@@ -59,6 +59,13 @@ $duckdb->inTransaction(): bool;
 
 ## Notice
 
+There may be response case that this library does not handle. To prevent the system hanging, you can set a timeout.
+
+```php
+$duckdb->setTimeout($microseconds): void;
+$duckdb->removeTimeout(): void;
+```
+
 This project is not super actively maintained. The inspiration to build this abstraction came from my work on my [database abstraction](https://github.com/Sentience-Framework/database)
 
 If anybody wants to clone this project and start a more sophisticated version, feel free!

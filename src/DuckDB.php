@@ -7,21 +7,9 @@ use Throwable;
 class DuckDB
 {
     public const string BINARY = 'duckdb';
-    public const array ESCAPE_CHARS = [
-        '\\' => '\\\\',
-        "\n" => '\\n',
-        "\r" => '\\r',
-        "\t" => '\\t',
-        "\0" => '',
-        "\b" => '\\b',
-        "\x1A" => '\\x1A',
-        "\f" => '\\f',
-        "\v" => '\\v'
-    ];
 
     private Connection $connection;
     private bool $inTransation = false;
-    private ?int $timeout = null;
 
     public static function memory(string $binary = self::BINARY): static
     {
@@ -54,26 +42,22 @@ class DuckDB
 
     public function dotCommand(string $command): void
     {
-        $this->exec($command, false, false);
+        $this->connection->execute($command, false, false);
     }
 
-    public function exec(string $statement, bool $addSemicolon = true, bool $expectResult = true): void
+    public function exec(string $statement): void
     {
-        $this->connection->execute($statement, $addSemicolon, $expectResult);
+        $this->connection->execute($statement);
     }
 
-    public function query(string $query, bool $addSemicolon = true, bool $expectResult = true): ?Result
+    public function query(string $query): Result
     {
-        return $this->connection->execute($query, $addSemicolon, $expectResult);
+        return $this->connection->execute($query);
     }
 
-    public function prepared(string $query, array $params = [], bool $addSemicolon = true, bool $expectResult = true): ?Result
+    public function prepared(string $query, array $params = []): Result
     {
-        return $this->query(
-            (new PreparedStatement($query, $params))->toSql(),
-            $addSemicolon,
-            $expectResult
-        );
+        return $this->query((new PreparedStatement($query, $params))->toSql());
     }
 
     public function beginTransation(): void
