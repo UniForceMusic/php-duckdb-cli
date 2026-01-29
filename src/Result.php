@@ -2,15 +2,18 @@
 
 namespace UniForceMusic\PHPDuckDBCLI;
 
+use UniForceMusic\PHPDuckDBCLI\Enums\ModeEnum;
+
 class Result
 {
-    public const string REGEX_RESULT_PATTERN = '/^(\┌[\─\┬]+\┐[\S\s]*?\└[\─\┴]+\┘)$\s*/m';
+    public const string REGEX_DUCKBOX_RESULT_PATTERN = '/^(\┌[\─\┬]+\┐[\S\s]*?\└[\─\┴]+\┘)$\s*/m';
+    public const string REGEX_JSON_RESULT_PATTERN = '/^(\[[\S\s]*\])$\s*/m';
 
     private bool $parsed = false;
     private array $columns = [];
     private array $rows = [];
 
-    public function __construct(private string $output)
+    public function __construct(private string $output, private ModeEnum $mode)
     {
         if (empty($this->output)) {
             $this->parsed = true;
@@ -19,7 +22,9 @@ class Result
         }
 
         $isTableOutput = (bool) preg_match(
-            static::REGEX_RESULT_PATTERN,
+            $mode == ModeEnum::DUCKBOX
+            ? static::REGEX_DUCKBOX_RESULT_PATTERN
+            : static::REGEX_JSON_RESULT_PATTERN,
             $output,
             $match
         );
@@ -52,6 +57,17 @@ class Result
     }
 
     private function parse(): void
+    {
+        if ($this->mode == ModeEnum::JSON) {
+            $this->parseJson();
+        } else {
+            $this->parseDuckbox();
+        }
+
+        $this->parsed = true;
+    }
+
+    private function parseDuckbox(): void
     {
         $lines = explode(PHP_EOL, $this->output);
 
@@ -114,7 +130,20 @@ class Result
             }
         }
 
-        $this->parsed = true;
+        $this->columns = $columns;
+        $this->rows = $rows;
+    }
+
+    private function parseJson(): void
+    {
+        $rows = json_decode($this->output, true);
+
+        $columns = [];
+
+        foreach (array_keys($row[0] ?? []) as $key) {
+            $columns[$key] = '';
+        }
+
         $this->columns = $columns;
         $this->rows = $rows;
     }

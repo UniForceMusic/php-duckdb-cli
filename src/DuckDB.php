@@ -3,6 +3,7 @@
 namespace UniForceMusic\PHPDuckDBCLI;
 
 use Throwable;
+use UniForceMusic\PHPDuckDBCLI\Enums\ModeEnum;
 
 class DuckDB
 {
@@ -11,21 +12,22 @@ class DuckDB
     private Connection $connection;
     private bool $inTransation = false;
 
-    public static function memory(string $binary = self::BINARY): static
+    public static function memory(ModeEnum $mode = ModeEnum::DUCKBOX, string $binary = self::BINARY): static
     {
-        return new static(null, $binary);
+        return new static(null, $mode, $binary);
     }
 
-    public static function file(string $file, string $binary = self::BINARY): static
+    public static function file(string $file, ModeEnum $mode = ModeEnum::DUCKBOX, string $binary = self::BINARY): static
     {
-        return new static($file, $binary);
+        return new static($file, $mode, $binary);
     }
 
     public function __construct(
         private ?string $file = null,
+        ModeEnum $mode = ModeEnum::DUCKBOX,
         private string $binary = self::BINARY
     ) {
-        $this->connection = new Connection($binary, $file);
+        $this->connection = new Connection($binary, $file, $mode);
 
         $this->initConnection();
     }
@@ -38,6 +40,16 @@ class DuckDB
     public function setTimeout(int $microseconds): void
     {
         $this->connection->setTimeout($microseconds);
+    }
+
+    public function duckboxMode(): void
+    {
+        $this->connection->changeMode(ModeEnum::DUCKBOX);
+    }
+
+    public function jsonMode(): void
+    {
+        $this->connection->changeMode(ModeEnum::JSON);
     }
 
     public function dotCommand(string $command): void

@@ -2,6 +2,7 @@
 
 namespace UniForceMusic\PHPDuckDBCLI;
 
+use UniForceMusic\PHPDuckDBCLI\Enums\ModeEnum;
 use UniForceMusic\PHPDuckDBCLI\Enums\PipesEnum;
 use UniForceMusic\PHPDuckDBCLI\Exceptions\ConnectionException;
 use UniForceMusic\PHPDuckDBCLI\Exceptions\DuckDBException;
@@ -12,12 +13,16 @@ class Connection
     private array $pipes = [];
     private ?int $timeout = null;
 
-    public function __construct(string $binary, ?string $file)
+    public function __construct(string $binary, ?string $file, private ModeEnum $mode)
     {
         $command = sprintf(
             '%s -noheader',
             escapeshellarg($binary)
         );
+
+        if ($mode == ModeEnum::JSON) {
+            $command .= ' -json';
+        }
 
         if ($file) {
             $command .= ' ';
@@ -51,6 +56,17 @@ class Connection
     public function setTimeout(int $microseconds): void
     {
         $this->timeout = $microseconds;
+    }
+
+    public function changeMode(ModeEnum $mode): void
+    {
+        $this->mode = $mode;
+
+        if ($mode == ModeEnum::JSON) {
+            $this->execute('.mode json', false, false);
+        } else {
+            $this->execute('.mode duckbox', false, false);
+        }
     }
 
     public function execute(string $sql, bool $addSemicolon = true, bool $expectResult = true): ?Result
@@ -103,7 +119,7 @@ class Connection
             }
         }
 
-        return new Result($output);
+        return new Result($output, $this->mode);
     }
 
     private function readStreams(): string
