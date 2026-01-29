@@ -61,6 +61,29 @@ $duckdb->rollbackTransaction(): void;
 $duckdb->inTransaction(): bool;
 ```
 
+## JSON mode
+
+To improve the accuracy of returned results, you can use json mode by calling.
+
+```php
+$duckdb->jsonMode();
+```
+
+This however makes it impossible to retrieve column types.
+If you wish to get both column types and accurate results, do the following:
+
+```php
+$query = 'SELECT * FROM information_schema.tables';
+
+$duckdb->duckboxMode();
+$columns = $duckdb->query($query . ' LIMIT 0')->columns();
+
+$duckdb->jsonMode();
+$rows = $duckdb->query($query)->rows();
+```
+
+While not efficient, it's DuckDB..... it's gonna be fast regardless.
+
 ## Tests
 
 To run the tests, run `composer test` in your console
