@@ -19,12 +19,16 @@ class Connection
     private array $pipes = [];
     private ?int $timeout = null;
 
-    public function __construct(string $binary, ?string $file, private Mode $mode)
+    public function __construct(string $binary, ?string $file, bool $readOnly, private Mode $mode)
     {
         $command = sprintf(
             '%s -noheader',
             escapeshellarg($binary)
         );
+
+        if ($readOnly) {
+            $command .= ' -readonly';
+        }
 
         if ($mode == Mode::JSON) {
             $command .= ' -json';

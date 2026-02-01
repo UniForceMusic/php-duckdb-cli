@@ -13,22 +13,23 @@ class DuckDB
     private Connection $connection;
     private bool $inTransation = false;
 
-    public static function memory(Mode $mode = Mode::JSON, string $binary = self::BINARY): static
+    public static function memory(bool $readOnly = false, Mode $mode = Mode::JSON, string $binary = self::BINARY): static
     {
         return new static(null, $mode, $binary);
     }
 
-    public static function file(string $file, Mode $mode = Mode::JSON, string $binary = self::BINARY): static
+    public static function file(string $file, bool $readOnly = false, Mode $mode = Mode::JSON, string $binary = self::BINARY): static
     {
-        return new static($file, $mode, $binary);
+        return new static($file, $readOnly, $mode, $binary);
     }
 
     public function __construct(
-        private ?string $file = null,
+        ?string $file = null,
+        bool $readOnly = false,
         Mode $mode = Mode::JSON,
-        private string $binary = self::BINARY
+        string $binary = self::BINARY
     ) {
-        $this->connection = new Connection($binary, $file, $mode);
+        $this->connection = new Connection($binary, $file, $readOnly, $mode);
     }
 
     public function removeTimeout(): void
