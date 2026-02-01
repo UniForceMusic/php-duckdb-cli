@@ -39,11 +39,12 @@ $duckdb->query(string $query): Result;
 $duckdb->prepared(string $query, array $params = []): Result;
 ```
 
-The result class has two methods:
+The result class has three methods:
 
 ```php
-$result->columns(): array;
-$result->rows(): array;
+$result->getRawOutput(): string;
+$result->getColumns(): array;
+$result->getRows(): array;
 ```
 
 To save on performance the output will only be parsed once one of these methods is invoked.
@@ -61,25 +62,26 @@ $duckdb->rollbackTransaction(): void;
 $duckdb->inTransaction(): bool;
 ```
 
-## JSON mode
+## DUCKBOX mode
 
-To improve the accuracy of returned results, you can use json mode by calling.
+To add types to the returned results, you can use duckbox mode.
 
 ```php
-$duckdb->jsonMode();
+$duckdb->duckboxMode();
 ```
 
-This however makes it impossible to retrieve column types.
+This however makes it impossible to retrieve accurate strings since whitespace on the right is trimmed off.
+
 If you wish to get both column types and accurate results, do the following:
 
 ```php
 $query = 'SELECT * FROM information_schema.tables';
 
 $duckdb->duckboxMode();
-$columns = $duckdb->query($query . ' LIMIT 0')->columns();
+$columns = $duckdb->query($query . ' LIMIT 0')->getColumns();
 
 $duckdb->jsonMode();
-$rows = $duckdb->query($query)->rows();
+$rows = $duckdb->query($query)->getRows();
 ```
 
 While not efficient, it's DuckDB..... it's gonna be fast regardless.

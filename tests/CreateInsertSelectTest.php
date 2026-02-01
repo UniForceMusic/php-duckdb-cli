@@ -7,16 +7,18 @@ class CreateInsertSelectTest extends TestCase
     public function testCreateTable(): void
     {
         $this->duckdb->exec('CREATE TABLE test (id INT32, name VARCHAR)');
+        $this->duckdb->exec("INSERT INTO test (id, name) VALUES (1, 'test')");
 
-        $result = $this->duckdb->query('SELECT * FROM test LIMIT 0');
+        $result = $this->duckdb->query('SELECT * FROM test LIMIT 1');
 
-        $columns = $result->columns();
+        $columns = $result->getColumns();
+
+        if (!array_is_list($columns)) {
+            $columns = array_keys($columns);
+        }
 
         $this->assertEquals(
-            [
-                'id' => 'int32',
-                'name' => 'varchar'
-            ],
+            ['id', 'name'],
             $columns
         );
     }
@@ -41,7 +43,7 @@ class CreateInsertSelectTest extends TestCase
 
         $result = $this->duckdb->query('SELECT * FROM test');
 
-        $count = count($result->rows());
+        $count = count($result->getRows());
 
         $this->assertEquals(2, $count);
     }
@@ -53,7 +55,7 @@ class CreateInsertSelectTest extends TestCase
 
         $result = $this->duckdb->query('SELECT * FROM test LIMIT 1');
 
-        $row = $result->rows()[0];
+        $row = $result->getRows()[0];
 
         $this->assertEquals(
             ['id' => 1, 'name' => 'John Doe'],

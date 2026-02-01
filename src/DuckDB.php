@@ -3,7 +3,8 @@
 namespace UniForceMusic\PHPDuckDBCLI;
 
 use Throwable;
-use UniForceMusic\PHPDuckDBCLI\Enums\ModeEnum;
+use UniForceMusic\PHPDuckDBCLI\Mode;
+use UniForceMusic\PHPDuckDBCLI\Results\ResultInterface;
 
 class DuckDB
 {
@@ -12,24 +13,22 @@ class DuckDB
     private Connection $connection;
     private bool $inTransation = false;
 
-    public static function memory(ModeEnum $mode = ModeEnum::DUCKBOX, string $binary = self::BINARY): static
+    public static function memory(Mode $mode = Mode::JSON, string $binary = self::BINARY): static
     {
         return new static(null, $mode, $binary);
     }
 
-    public static function file(string $file, ModeEnum $mode = ModeEnum::DUCKBOX, string $binary = self::BINARY): static
+    public static function file(string $file, Mode $mode = Mode::JSON, string $binary = self::BINARY): static
     {
         return new static($file, $mode, $binary);
     }
 
     public function __construct(
         private ?string $file = null,
-        ModeEnum $mode = ModeEnum::DUCKBOX,
+        Mode $mode = Mode::JSON,
         private string $binary = self::BINARY
     ) {
         $this->connection = new Connection($binary, $file, $mode);
-
-        $this->initConnection();
     }
 
     public function removeTimeout(): void
@@ -44,12 +43,12 @@ class DuckDB
 
     public function duckboxMode(): void
     {
-        $this->connection->changeMode(ModeEnum::DUCKBOX);
+        $this->connection->changeMode(Mode::DUCKBOX);
     }
 
     public function jsonMode(): void
     {
-        $this->connection->changeMode(ModeEnum::JSON);
+        $this->connection->changeMode(Mode::JSON);
     }
 
     public function dotCommand(string $command): void
@@ -62,12 +61,12 @@ class DuckDB
         $this->connection->execute($statement);
     }
 
-    public function query(string $query): Result
+    public function query(string $query): ResultInterface
     {
         return $this->connection->execute($query);
     }
 
-    public function prepared(string $query, array $params = []): Result
+    public function prepared(string $query, array $params = []): ResultInterface
     {
         return $this->query((new PreparedStatement($query, $params))->toSql());
     }
@@ -104,24 +103,5 @@ class DuckDB
     public function inTransaction(): bool
     {
         return $this->inTransation;
-    }
-
-    private function initConnection(): void
-    {
-        $this->dotCommand('.changes on');
-
-        $this->dotCommand(
-            sprintf(
-                '.maxrows %d',
-                PHP_INT_MAX
-            )
-        );
-
-        $this->dotCommand(
-            sprintf(
-                '.maxwidth %d',
-                PHP_INT_MAX
-            )
-        );
     }
 }

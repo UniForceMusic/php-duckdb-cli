@@ -2,25 +2,31 @@
 
 namespace UniForceMusic\PHPDuckDBCLI;
 
-use UniForceMusic\PHPDuckDBCLI\Enums\ModeEnum;
-use UniForceMusic\PHPDuckDBCLI\Enums\PipesEnum;
+use UniForceMusic\PHPDuckDBCLI\Mode;
 use UniForceMusic\PHPDuckDBCLI\Exceptions\ConnectionException;
 use UniForceMusic\PHPDuckDBCLI\Exceptions\DuckDBException;
+use UniForceMusic\PHPDuckDBCLI\Results\ResultInterface;
 
 class Connection
 {
+    public const int PIPE_STDIN = 0;
+    public const int PIPE_STDOUT = 1;
+    public const int PIPE_STDERR = 2;
+    public const string REGEX_CHANGES_OUTPUT = '/changes\:\s*[0-9]+\s*total_changes\:\s*[0-9]+\s*$/';
+    public const string REGEX_ERROR_OUTPUT = '/^([A-Za-z\-\_\s]*Error\:?[\S\s]+)$/im';
+
     private mixed $process;
     private array $pipes = [];
     private ?int $timeout = null;
 
-    public function __construct(string $binary, ?string $file, private ModeEnum $mode)
+    public function __construct(string $binary, ?string $file, private Mode $mode)
     {
         $command = sprintf(
             '%s -noheader',
             escapeshellarg($binary)
         );
 
-        if ($mode == ModeEnum::JSON) {
+        if ($mode == Mode::JSON) {
             $command .= ' -json';
         }
 
@@ -46,6 +52,26 @@ class Connection
         foreach ($this->pipes as $pipe) {
             stream_set_blocking($pipe, false);
         }
+
+        $this->execute('.changes on', false, false);
+
+        $this->execute(
+            sprintf(
+                '.maxrows %d',
+                PHP_INT_MAX
+            ),
+            false,
+            false
+        );
+
+        $this->execute(
+            sprintf(
+                '.maxwidth %d',
+                PHP_INT_MAX
+            ),
+            false,
+            false
+        );
     }
 
     public function removeTimeout(): void
@@ -58,18 +84,21 @@ class Connection
         $this->timeout = $microseconds;
     }
 
-    public function changeMode(ModeEnum $mode): void
+    public function changeMode(Mode $mode): void
     {
         $this->mode = $mode;
 
-        if ($mode == ModeEnum::JSON) {
-            $this->execute('.mode json', false, false);
-        } else {
-            $this->execute('.mode duckbox', false, false);
-        }
+        $this->execute(
+            sprintf(
+                '.mode %s',
+                $mode->value
+            ),
+            false,
+            false
+        );
     }
 
-    public function execute(string $sql, bool $addSemicolon = true, bool $expectResult = true): ?Result
+    public function execute(string $sql, bool $addSemicolon = true, bool $expectResult = true): ?ResultInterface
     {
         $startTime = microtime(true);
 
@@ -79,7 +108,9 @@ class Connection
                 'waiting for remaining output to finish streaming'
             );
 
-            if (empty($this->readStreams())) {
+            $streams = $this->readStdout() . $this->readStderr();
+
+            if (empty($streams)) {
                 break;
             }
         }
@@ -88,7 +119,7 @@ class Connection
             $sql .= ';';
         }
 
-        fwrite($this->pipes[PipesEnum::STDIN->value], $sql . PHP_EOL);
+        $this->writeStdin($sql);
 
         if (!$expectResult) {
             return null;
@@ -102,7 +133,11 @@ class Connection
                 "executing '{$sql}'"
             );
 
-            $output .= $this->readStreams();
+            $streams = $this->readStdout() . $this->readStderr();
+
+            if (!empty($streams)) {
+                $output .= $streams;
+            }
 
             if (!proc_get_status($this->process)['running']) {
                 throw new DuckDBException('DuckDB process has quit unexpectedly');
@@ -119,13 +154,7 @@ class Connection
             }
         }
 
-        return new Result($output, $this->mode);
-    }
-
-    private function readStreams(): string
-    {
-        return (string) stream_get_contents($this->pipes[PipesEnum::STDOUT->value])
-            . (string) stream_get_contents($this->pipes[PipesEnum::STDERR->value]);
+        return $this->parse($output);
     }
 
     private function throwExceptionIfTimedOut(float $startTime, string $reason): void
@@ -141,15 +170,35 @@ class Connection
 
     private function hasFinishedGeneratingOutput(string $output): array
     {
-        if ((bool) preg_match('/^([A-Za-z\-\_\s]*Error\:?[\S\s]+)$/im', $output, $match)) {
+        if ((bool) preg_match(self::REGEX_ERROR_OUTPUT, $output, $match)) {
             return [false, $match[1]];
         }
 
-        if ((bool) preg_match('/changes\:\s*[0-9]+\s*total_changes\:\s*[0-9]+\s*$/', $output)) {
+        if ((bool) preg_match(self::REGEX_CHANGES_OUTPUT, $output)) {
             return [true, false];
         }
 
         return [false, false];
+    }
+
+    protected function writeStdin(string $string): void
+    {
+        fwrite($this->pipes[self::PIPE_STDIN], $string . PHP_EOL);
+    }
+
+    protected function readStdout(): string
+    {
+        return stream_get_contents($this->pipes[self::PIPE_STDOUT]);
+    }
+
+    protected function readStderr(): string
+    {
+        return stream_get_contents($this->pipes[self::PIPE_STDERR]);
+    }
+
+    protected function parse(string $output): ResultInterface
+    {
+        return $this->mode->getParser($output)->parse();
     }
 
     public function __destruct()

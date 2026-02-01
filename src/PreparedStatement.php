@@ -53,7 +53,7 @@ class PreparedStatement
 
     private function namedParamsToQuestionMarks(): void
     {
-        if (count($this->params) == 0) {
+        if (count($this->params) == 0 || array_is_list($this->params)) {
             return;
         }
 

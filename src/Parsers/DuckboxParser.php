@@ -1,75 +1,21 @@
 <?php
 
-namespace UniForceMusic\PHPDuckDBCLI;
+namespace UniForceMusic\PHPDuckDBCLI\Parsers;
 
-use UniForceMusic\PHPDuckDBCLI\Enums\ModeEnum;
+use UniForceMusic\PHPDuckDBCLI\Results\DuckboxResult;
 
-class Result
+class DuckboxParser extends ParserAbstract
 {
-    public const string REGEX_DUCKBOX_RESULT_PATTERN = '/^(\┌[\─\┬]+\┐[\S\s]*?\└[\─\┴]+\┘)$\s*/m';
-    public const string REGEX_JSON_RESULT_PATTERN = '/^(\[[\S\s]*\])$\s*/m';
+    public const string REGEX_DUCKBOX_OUTPUT_PATTERN = '/^(\┌[\─\┬]+\┐[\S\s]*?\└[\─\┴]+\┘)$\s*/m';
+    public const string OUTPUT_FALLBACK = '┌──┐' . PHP_EOL . '│  │' . PHP_EOL . '└──┘';
 
-    private bool $parsed = false;
-    private array $columns = [];
-    private array $rows = [];
-
-    public function __construct(private string $output, private ModeEnum $mode)
+    public function parse(): DuckboxResult
     {
-        if (empty($this->output)) {
-            $this->parsed = true;
+        preg_match(self::REGEX_DUCKBOX_OUTPUT_PATTERN, $this->output, $match);
 
-            return;
-        }
+        $output = $match[0] ?? self::OUTPUT_FALLBACK;
 
-        $isTableOutput = (bool) preg_match(
-            $mode == ModeEnum::DUCKBOX
-            ? static::REGEX_DUCKBOX_RESULT_PATTERN
-            : static::REGEX_JSON_RESULT_PATTERN,
-            $output,
-            $match
-        );
-
-        if (!$isTableOutput) {
-            $this->parsed = true;
-
-            return;
-        }
-
-        $this->output = $match[1];
-    }
-
-    public function columns(): array
-    {
-        if (!$this->parsed) {
-            $this->parse();
-        }
-
-        return $this->columns;
-    }
-
-    public function rows(): array
-    {
-        if (!$this->parsed) {
-            $this->parse();
-        }
-
-        return $this->rows;
-    }
-
-    private function parse(): void
-    {
-        if ($this->mode == ModeEnum::JSON) {
-            $this->parseJson();
-        } else {
-            $this->parseDuckbox();
-        }
-
-        $this->parsed = true;
-    }
-
-    private function parseDuckbox(): void
-    {
-        $lines = explode(PHP_EOL, $this->output);
+        $lines = explode(PHP_EOL, $output);
 
         $boxTopLine = $lines[0];
         $columnNamesLine = $lines[1];
@@ -130,22 +76,7 @@ class Result
             }
         }
 
-        $this->columns = $columns;
-        $this->rows = $rows;
-    }
-
-    private function parseJson(): void
-    {
-        $rows = json_decode($this->output, true);
-
-        $columns = [];
-
-        foreach (array_keys($row[0] ?? []) as $key) {
-            $columns[$key] = '';
-        }
-
-        $this->columns = $columns;
-        $this->rows = $rows;
+        return new DuckboxResult($output, $columns, $rows);
     }
 
     private function castValue(string $type, string $value): mixed
