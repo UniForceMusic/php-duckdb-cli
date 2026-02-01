@@ -5,6 +5,7 @@ namespace UniForceMusic\PHPDuckDBCLI;
 use UniForceMusic\PHPDuckDBCLI\Mode;
 use UniForceMusic\PHPDuckDBCLI\Exceptions\ConnectionException;
 use UniForceMusic\PHPDuckDBCLI\Exceptions\DuckDBException;
+use UniForceMusic\PHPDuckDBCLI\Results\EmptyResult;
 use UniForceMusic\PHPDuckDBCLI\Results\ResultInterface;
 
 class Connection
@@ -102,7 +103,7 @@ class Connection
         );
     }
 
-    public function execute(string $sql, bool $addSemicolon = true, bool $expectResult = true): ?ResultInterface
+    public function execute(string $sql, bool $addSemicolon = true, bool $expectResult = true): ResultInterface
     {
         $startTime = microtime(true);
 
@@ -126,7 +127,7 @@ class Connection
         $this->writeStdin($sql);
 
         if (!$expectResult) {
-            return null;
+            return new EmptyResult();
         }
 
         $output = '';

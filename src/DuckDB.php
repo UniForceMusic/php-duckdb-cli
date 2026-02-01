@@ -13,9 +13,9 @@ class DuckDB
     private Connection $connection;
     private bool $inTransation = false;
 
-    public static function memory(bool $readOnly = false, Mode $mode = Mode::JSON, string $binary = self::BINARY): static
+    public static function memory(Mode $mode = Mode::JSON, string $binary = self::BINARY): static
     {
-        return new static(null, $mode, $binary);
+        return new static(null, false, $mode, $binary);
     }
 
     public static function file(string $file, bool $readOnly = false, Mode $mode = Mode::JSON, string $binary = self::BINARY): static

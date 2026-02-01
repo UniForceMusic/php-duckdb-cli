@@ -18,11 +18,11 @@ abstract class ResultAbstract implements ResultInterface
 
     public function getColumns(): array
     {
-        return $this->getColumns;
+        return $this->columns;
     }
 
     public function getRows(): array
     {
-        return $this->getRows;
+        return $this->rows;
     }
 }
