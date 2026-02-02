@@ -3,6 +3,7 @@
 namespace UniForceMusic\PHPDuckDBCLI\Integrations\Sentience;
 
 use Closure;
+use Throwable;
 use Sentience\Database\Adapters\AdapterAbstract;
 use Sentience\Database\Dialects\DialectInterface;
 use Sentience\Database\Driver;
@@ -44,19 +45,41 @@ class DuckDBAdapter extends AdapterAbstract
 
     public function exec(string $query): void
     {
-        $this->duckdb->exec($query);
+        $start = microtime(true);
+
+        try {
+            $this->duckdb->exec($query);
+        } catch (Throwable $exception) {
+            $this->debug($query, $start, $exception);
+
+            throw $exception;
+        }
+
+        $this->debug($query, $start);
     }
 
     public function query(string $query): DuckDBResult
     {
-        return new DuckDBResult($this->duckdb->query($query));
+        $start = microtime(true);
+
+        try {
+            $result = $this->duckdb->query($query);
+
+            $this->debug($query, $start);
+
+            return new DuckDBResult($result);
+        } catch (Throwable $exception) {
+            $this->debug($query, $start, $exception);
+
+            throw $exception;
+        }
     }
 
     public function queryWithParams(DialectInterface $dialect, QueryWithParams $queryWithParams, bool $emulatePrepare): DuckDBResult
     {
         $query = $queryWithParams->namedParamsToQuestionMarks()->toSql($dialect);
 
-        return new DuckDBResult($this->duckdb->query($query));
+        return $this->query($query);
     }
 
     public function beginTransaction(DialectInterface $dialect, ?string $name = null): void
