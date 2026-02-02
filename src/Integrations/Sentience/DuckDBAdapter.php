@@ -4,12 +4,14 @@ namespace UniForceMusic\PHPDuckDBCLI\Integrations\Sentience;
 
 use Closure;
 use Throwable;
+use Sentience\Database\Queries\Query;
 use Sentience\Database\Adapters\AdapterAbstract;
 use Sentience\Database\Dialects\DialectInterface;
 use Sentience\Database\Driver;
 use Sentience\Database\Queries\Objects\QueryWithParams;
 use Sentience\Database\Sockets\SocketAbstract;
 use UniForceMusic\PHPDuckDBCLI\DuckDB;
+use UniForceMusic\PHPDuckDBCLI\PreparedStatement;
 
 class DuckDBAdapter extends AdapterAbstract
 {
@@ -113,7 +115,13 @@ class DuckDBAdapter extends AdapterAbstract
         return $this->query(
             sprintf(
                 "SELECT currval('%s');",
-                $name
+                Query::escapeAnsi(
+                    $name,
+                    [
+                        ...PreparedStatement::ESCAPE_CHARS,
+                        "'" => "''"
+                    ]
+                )
             )
         )->scalar();
     }
