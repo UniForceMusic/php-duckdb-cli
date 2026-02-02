@@ -13,7 +13,7 @@ class Connection
     public const int PIPE_STDIN = 0;
     public const int PIPE_STDOUT = 1;
     public const int PIPE_STDERR = 2;
-    public const string REGEX_CHANGES_OUTPUT = '/changes\:\s*[0-9]+\s*total_changes\:\s*[0-9]+\s*$/';
+    public const string REGEX_RESULT_OUTPUT = '/([\S\s]*?)\s*changes\:\s*[0-9]+\s*total_changes\:\s*[0-9]+\s*$/m';
     public const string REGEX_ERROR_OUTPUT = '/^([A-Za-z\-\_\s]*Error\:?[\S\s]+)$/im';
 
     private mixed $process;
@@ -148,9 +148,11 @@ class Connection
                 throw new DuckDBException('DuckDB process has quit unexpectedly');
             }
 
-            [$hasChangesOutput, $errorOutput] = $this->hasFinishedGeneratingOutput($output);
+            [$resultOutput, $errorOutput] = $this->hasFinishedGeneratingOutput($output);
 
-            if ($hasChangesOutput) {
+            if ($resultOutput !== false) {
+                $output = $resultOutput;
+
                 break;
             }
 
@@ -175,12 +177,12 @@ class Connection
 
     private function hasFinishedGeneratingOutput(string $output): array
     {
-        if ((bool) preg_match(self::REGEX_ERROR_OUTPUT, $output, $match)) {
-            return [false, $match[1]];
+        if ((bool) preg_match(self::REGEX_RESULT_OUTPUT, $output, $match)) {
+            return [$match[1], false];
         }
 
-        if ((bool) preg_match(self::REGEX_CHANGES_OUTPUT, $output)) {
-            return [true, false];
+        if ((bool) preg_match(self::REGEX_ERROR_OUTPUT, $output, $match)) {
+            return [false, $match[1]];
         }
 
         return [false, false];

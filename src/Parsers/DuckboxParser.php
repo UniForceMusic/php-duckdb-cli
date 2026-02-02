@@ -6,16 +6,9 @@ use UniForceMusic\PHPDuckDBCLI\Results\DuckboxResult;
 
 class DuckboxParser extends ParserAbstract
 {
-    public const string REGEX_DUCKBOX_OUTPUT_PATTERN = '/^(\┌[\─\┬]+\┐[\S\s]*?\└[\─\┴]+\┘)$\s*/m';
-    public const string OUTPUT_FALLBACK = '┌──┐' . PHP_EOL . '│  │' . PHP_EOL . '└──┘';
-
     public function parse(): DuckboxResult
     {
-        preg_match(self::REGEX_DUCKBOX_OUTPUT_PATTERN, $this->output, $match);
-
-        $output = $match[0] ?? self::OUTPUT_FALLBACK;
-
-        $lines = explode(PHP_EOL, $output);
+        $lines = explode(PHP_EOL, $this->output);
 
         $boxTopLine = $lines[0];
         $columnNamesLine = $lines[1];
@@ -76,7 +69,7 @@ class DuckboxParser extends ParserAbstract
             }
         }
 
-        return new DuckboxResult($output, $columns, $rows);
+        return new DuckboxResult($this->output, $columns, $rows);
     }
 
     private function castValue(string $type, string $value): mixed
