@@ -25,10 +25,7 @@ class DuckDBDatabase extends DatabaseAbstract
 
         $version = $adapter->version();
 
-        $dialect = new DuckDBDialect(
-            Driver::PGSQL,
-            $version
-        );
+        $dialect = new DuckDBDialect($version);
 
         return new static($adapter, $dialect);
     }
@@ -48,10 +45,7 @@ class DuckDBDatabase extends DatabaseAbstract
 
         $version = $adapter->version();
 
-        $dialect = new DuckDBDialect(
-            Driver::PGSQL,
-            $version
-        );
+        $dialect = new DuckDBDialect($version);
 
         return new static($adapter, $dialect);
     }

@@ -9,7 +9,7 @@ use Sentience\Database\Queries\Objects\QueryWithParams;
 
 class DuckDBDialect extends PgSQLDialect
 {
-    public function __construct(Driver $driver, int|string $version)
+    public function __construct(protected int|string $duckDbVersion)
     {
         parent::__construct(Driver::PGSQL, '10.0');
     }
