@@ -86,6 +86,15 @@ $rows = $duckdb->query($query)->getRows();
 
 While not efficient, it's DuckDB..... it's gonna be fast regardless.
 
+# Integrations
+
+To integratie DuckDB more easily into existing projects, this library offers ready made integrations.
+
+Currently this integration offers an implementation for:
+- Sentience Database [Finished]
+- PDO / mysqli / SQLite3 [Work in progress]
+- Laravel [On the backlog]
+
 ## Tests
 
 To run the tests, run `composer test` in your console
