@@ -3,6 +3,7 @@
 namespace UniForceMusic\PHPDuckDBCLI\Integrations\Sentience;
 
 use Sentience\Database\Dialects\PgSQLDialect;
+use Sentience\Database\Queries\Enums\TypeEnum;
 use Sentience\Database\Queries\Objects\QueryWithParams;
 
 class DuckDBDialect extends PgSQLDialect
@@ -37,5 +38,13 @@ class DuckDBDialect extends PgSQLDialect
         $query .= $this->escapeIdentifier($name);
 
         return new QueryWithParams($query);
+    }
+
+    public function type(TypeEnum $type, ?int $size = null): string
+    {
+        return match ($type) {
+            TypeEnum::INT => $size > 32 ? 'INT64' : 'INT32',
+            default => parent::type($type, $size)
+        };
     }
 }
