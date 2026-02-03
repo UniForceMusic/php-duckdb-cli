@@ -5,6 +5,7 @@ namespace UniForceMusic\PHPDuckDBCLI\Integrations\Sentience;
 use Closure;
 use Sentience\Database\Driver;
 use Sentience\Database\Databases\DatabaseAbstract;
+use Sentience\Database\Queries\Objects\Raw;
 
 class DuckDBDatabase extends DatabaseAbstract
 {
@@ -15,7 +16,6 @@ class DuckDBDatabase extends DatabaseAbstract
         ?Closure $debug = null,
     ): static {
         $adapter = new DuckDBAdapter(
-            Driver::SQLITE,
             $file,
             null,
             $queries,
@@ -26,20 +26,19 @@ class DuckDBDatabase extends DatabaseAbstract
         $version = $adapter->version();
 
         $dialect = new DuckDBDialect(
-            Driver::SQLITE,
+            Driver::PGSQL,
             $version
         );
 
         return new static($adapter, $dialect);
     }
 
-    public static function fromMemory(
+    public static function memory(
         array $queries = [],
         array $options = [],
         ?Closure $debug = null,
     ): static {
         $adapter = new DuckDBAdapter(
-            Driver::SQLITE,
             null,
             null,
             $queries,
@@ -50,10 +49,15 @@ class DuckDBDatabase extends DatabaseAbstract
         $version = $adapter->version();
 
         $dialect = new DuckDBDialect(
-            Driver::SQLITE,
+            Driver::PGSQL,
             $version
         );
 
         return new static($adapter, $dialect);
+    }
+
+    public function createTable(array|string|Raw $table): CreateTableQuery
+    {
+        return new CreateTableQuery($this, $this->dialect, $table);
     }
 }

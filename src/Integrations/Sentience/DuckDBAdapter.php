@@ -7,40 +7,44 @@ use Throwable;
 use Sentience\Database\Queries\Query;
 use Sentience\Database\Adapters\AdapterAbstract;
 use Sentience\Database\Dialects\DialectInterface;
-use Sentience\Database\Driver;
 use Sentience\Database\Queries\Objects\QueryWithParams;
 use Sentience\Database\Sockets\SocketAbstract;
 use UniForceMusic\PHPDuckDBCLI\DuckDB;
+use UniForceMusic\PHPDuckDBCLI\Mode;
 use UniForceMusic\PHPDuckDBCLI\PreparedStatement;
 
 class DuckDBAdapter extends AdapterAbstract
 {
+    public const string OPTIONS_DUCKDB_BINARY = 'binary';
+    public const string OPTIONS_DUCKDB_READ_ONLY = 'read_only';
+    public const string OPTIONS_DUCKDB_MODE = 'mode';
+    public const string OPTIONS_DUCKDB_TIMEOUT = 'timeout';
+
     protected DuckDB $duckdb;
 
     public function __construct(
-        Driver $driver,
         ?string $name,
-        SocketAbstract|null $socket,
-        array $queries,
-        array $options,
-        ?Closure $debug
+        protected SocketAbstract|null $socket,
+        protected array $queries,
+        protected array $options,
+        protected ?Closure $debug
     ) {
-        parent::__construct(
-            $driver,
-            $name ?? '',
-            $socket,
-            $queries,
-            $options,
-            $debug
+        $this->duckdb = new DuckDB(
+            $name,
+            (bool) ($options[static::OPTIONS_DUCKDB_READ_ONLY] ?? false),
+            Mode::from($options[static::OPTIONS_DUCKDB_MODE] ?? Mode::JSON->value),
+            (string) ($options[static::OPTIONS_DUCKDB_BINARY] ?? DuckDB::BINARY)
         );
 
-        $this->duckdb = new DuckDB($name);
+        if (array_key_exists(static::OPTIONS_DUCKDB_TIMEOUT, $options)) {
+            $this->duckdb->setTimeout((int) $options[static::OPTIONS_DUCKDB_TIMEOUT]);
+        }
     }
 
     public function version(): string
     {
         return substr(
-            $this->query('SELECT version()')->scalar(),
+            (new DuckDBResult($this->duckdb->query('SELECT version()')))->scalar(),
             1
         );
     }
