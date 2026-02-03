@@ -3,7 +3,6 @@
 namespace UniForceMusic\PHPDuckDBCLI\Integrations\Sentience;
 
 use Closure;
-use Sentience\Database\Driver;
 use Sentience\Database\Databases\DatabaseAbstract;
 use Sentience\Database\Queries\Objects\Raw;
 
