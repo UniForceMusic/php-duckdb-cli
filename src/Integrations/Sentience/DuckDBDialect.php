@@ -3,11 +3,17 @@
 namespace UniForceMusic\PHPDuckDBCLI\Integrations\Sentience;
 
 use Sentience\Database\Dialects\PgSQLDialect;
+use Sentience\Database\Driver;
 use Sentience\Database\Queries\Enums\TypeEnum;
 use Sentience\Database\Queries\Objects\QueryWithParams;
 
 class DuckDBDialect extends PgSQLDialect
 {
+    public function __construct(Driver $driver, int|string $version)
+    {
+        parent::__construct(Driver::PGSQL, '10.0');
+    }
+
     public function createSequence(
         bool $ifNotExists,
         string $name
