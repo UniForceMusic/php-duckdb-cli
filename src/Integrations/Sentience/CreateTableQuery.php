@@ -2,6 +2,7 @@
 
 namespace UniForceMusic\PHPDuckDBCLI\Integrations\Sentience;
 
+use Sentience\Database\Queries\Enums\TypeEnum;
 use Sentience\Database\Queries\Objects\Column;
 use Sentience\Database\Queries\Objects\Raw;
 use Sentience\Database\Queries\Query;
@@ -19,12 +20,14 @@ class CreateTableQuery extends \Sentience\Database\Queries\CreateTableQuery
             function () use ($emulatePrepare): ResultInterface {
                 $sequences = $this->createSequences();
 
+                $bigIntType = $this->dialect->type(TypeEnum::INT, 64);
+
                 foreach ($this->columns as $column) {
                     if (!array_key_exists($column->name, $sequences)) {
                         continue;
                     }
 
-                    $column->type = 'INT64';
+                    $column->type = $bigIntType;
                     $column->default = Query::raw(
                         sprintf(
                             'nextval(%s)',
