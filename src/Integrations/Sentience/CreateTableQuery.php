@@ -30,7 +30,7 @@ class CreateTableQuery extends \Sentience\Database\Queries\CreateTableQuery
                     $column->type = $bigIntType;
                     $column->default = Query::raw(
                         sprintf(
-                            'nextval(%s)',
+                            'NEXTVAL(%s)',
                             $this->dialect->escapeString($sequences[$column->name])
                         )
                     );

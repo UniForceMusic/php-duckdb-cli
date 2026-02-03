@@ -86,14 +86,51 @@ $rows = $duckdb->query($query)->getRows();
 
 While not efficient, it's DuckDB..... it's gonna be fast regardless.
 
-# Integrations
+## Integrations
 
 To integratie DuckDB more easily into existing projects, this library offers ready made integrations.
 
 Currently this integration offers an implementation for:
-- Sentience Database [Finished]
-- PDO / mysqli / SQLite3 [Work in progress]
-- Laravel [On the backlog]
+- [Finished] Sentience Database
+- [WIP] PDO
+- [WIP] mysqli
+- [WIP] SQLite3
+- [Backlog] Laravel
+
+### 1. Sentience integration
+
+Similar to the Sentience database abstraction, you initialize a database using `Database::connect()`, or you can use `::fromFile()` and `::memory()`.
+
+Using Sentience in combination with DuckDB gives the advantage of a fluent style querybuilder with a dedicated dialect.
+
+```php
+$duckdb = DuckDBDatabase::memory();
+
+$rows = $duckdb->select('orders.csv')
+    ->whereGreaterThanOrEquals('total', 50)
+    ->orderByDesc('created_at')
+    ->execute()
+    ->fetchAssocs();
+```
+
+Sentience even takes care of creating sequences when you create a table with a serial column.
+
+```php
+$duckdb->createTable('users')
+    ->identity('id')
+    ->string('email')
+    ->primaryKeys(['id'])
+    ->uniqueConstraint(['email'], 'users_uniq')
+    ->execute();
+
+// First executes:
+// CREATE SEQUENCE IF NOT EXISTS "users_id_sequence";
+
+// Then executes:
+// CREATE TABLE "users" ("id" INT64 NOT NULL DEFAULT NEXTVAL('users_id_sequence'), "name" VARCHAR(255), PRIMARY KEY ("id"), CONSTRAINT "users_uniq" UNIQUE ("name"));
+```
+
+Note that dumping the query using toSql() does not include the sequence create query
 
 ## Tests
 

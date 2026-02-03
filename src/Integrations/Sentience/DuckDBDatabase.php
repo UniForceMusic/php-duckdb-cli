@@ -8,6 +8,17 @@ use Sentience\Database\Queries\Objects\Raw;
 
 class DuckDBDatabase extends DatabaseAbstract
 {
+    public static function connect(
+        ?string $file,
+        array $queries = [],
+        array $options = [],
+        ?Closure $debug = null,
+    ): static {
+        return $file
+            ? static::fromFile($file, $queries, $options, $debug)
+            : static::memory($queries, $options, $debug);
+    }
+
     public static function fromFile(
         string $file,
         array $queries = [],
