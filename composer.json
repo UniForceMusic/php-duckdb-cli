@@ -15,5 +15,8 @@
         "test": [
             "./vendor/bin/phpunit ./tests"
         ]
+    },
+    "require": {
+        "sentience/database": "^2.0"
     }
 }

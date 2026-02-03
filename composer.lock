@@ -4,8 +4,40 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f935bb8cc0214426c282b6f563c380e5",
-    "packages": [],
+    "content-hash": "c2e5af946c2f00c9732b664b246456d6",
+    "packages": [
+        {
+            "name": "sentience/database",
+            "version": "v2.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Sentience-Framework/database.git",
+                "reference": "edf119d6d7165fed3acbd93c06acaadb72db042c"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Sentience-Framework/database/zipball/edf119d6d7165fed3acbd93c06acaadb72db042c",
+                "reference": "edf119d6d7165fed3acbd93c06acaadb72db042c",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.3"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Sentience\\Database\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "description": "The database connector for the Sentience framework",
+            "support": {
+                "issues": "https://github.com/Sentience-Framework/database/issues",
+                "source": "https://github.com/Sentience-Framework/database/tree/v2.0.0"
+            },
+            "time": "2026-01-18T21:54:38+00:00"
+        }
+    ],
     "packages-dev": [
         {
             "name": "myclabs/deep-copy",
