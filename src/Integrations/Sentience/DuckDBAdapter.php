@@ -4,7 +4,6 @@ namespace UniForceMusic\PHPDuckDBCLI\Integrations\Sentience;
 
 use Closure;
 use Throwable;
-use Sentience\Database\Queries\Query;
 use Sentience\Database\Adapters\AdapterAbstract;
 use Sentience\Database\Dialects\DialectInterface;
 use Sentience\Database\Queries\Objects\QueryWithParams;
@@ -91,13 +90,11 @@ class DuckDBAdapter extends AdapterAbstract
     public function beginTransaction(DialectInterface $dialect, ?string $name = null): void
     {
         $this->duckdb->beginTransation();
-
     }
 
     public function commitTransaction(DialectInterface $dialect, ?string $name = null): void
     {
         $this->duckdb->commitTransation();
-
     }
 
     public function rollbackTransaction(DialectInterface $dialect, ?string $name = null): void
@@ -119,7 +116,7 @@ class DuckDBAdapter extends AdapterAbstract
         return $this->query(
             sprintf(
                 "SELECT currval('%s');",
-                Query::escapeAnsi(
+                strtr(
                     $name,
                     [
                         ...PreparedStatement::ESCAPE_CHARS,
