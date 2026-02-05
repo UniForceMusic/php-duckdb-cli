@@ -4,6 +4,7 @@ namespace UniForceMusic\PHPDuckDBCLI\Integrations\Sentience;
 
 use Sentience\Database\Queries\Enums\TypeEnum;
 use Sentience\Database\Queries\Objects\Column;
+use Sentience\Database\Queries\Objects\QueryWithParams;
 use Sentience\Database\Queries\Objects\Raw;
 use Sentience\Database\Queries\Query;
 use Sentience\Database\Results\ResultInterface;
@@ -18,7 +19,13 @@ class CreateTableQuery extends \Sentience\Database\Queries\CreateTableQuery
     {
         return $this->database->transaction(
             function () use ($emulatePrepare): ResultInterface {
-                $sequences = $this->createSequences();
+                $sequences = $this->generateSequences();
+
+                $sequenceQueries = $this->generateSequenceQueuries($sequences);
+
+                foreach ($sequenceQueries as $sequenceQuery) {
+                    $this->database->exec($sequenceQuery->toSql($this->dialect));
+                }
 
                 $bigIntType = $this->dialect->type(TypeEnum::INT, 64);
 
@@ -42,7 +49,27 @@ class CreateTableQuery extends \Sentience\Database\Queries\CreateTableQuery
         );
     }
 
-    protected function createSequences(): array
+    public function toSql(): string
+    {
+        $query = parent::toSql();
+
+        $sequences = $this->generateSequences();
+
+        $sequenceQueries = $this->generateSequenceQueuries($sequences);
+
+        return implode(
+            '; ',
+            [
+                ...array_map(
+                    fn(QueryWithParams $queryWithParams): string => $queryWithParams->toSql($this->dialect),
+                    $sequenceQueries
+                ),
+                $query
+            ]
+        );
+    }
+
+    protected function generateSequences(): array
     {
         $sequences = [];
 
@@ -59,14 +86,21 @@ class CreateTableQuery extends \Sentience\Database\Queries\CreateTableQuery
                 $column->name
             );
 
-            $query = $this->dialect->createSequence($this->ifNotExists, $sequence);
-
-            $this->database->exec($query->toSql($this->dialect));
-
             $sequences[$column->name] = $sequence;
         }
 
         return $sequences;
+    }
+
+    protected function generateSequenceQueuries(array $sequences): array
+    {
+        $queries = [];
+
+        foreach ($sequences as $sequence) {
+            $queries[] = $this->dialect->createSequence($this->ifNotExists, $sequence);
+        }
+
+        return $queries;
     }
 
     protected function isSerialColumn(Column $column): bool

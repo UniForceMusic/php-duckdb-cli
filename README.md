@@ -130,8 +130,6 @@ $duckdb->createTable('users')
 // CREATE TABLE "users" ("id" INT64 NOT NULL DEFAULT NEXTVAL('users_id_sequence'), "name" VARCHAR(255), PRIMARY KEY ("id"), CONSTRAINT "users_uniq" UNIQUE ("name"));
 ```
 
-Note that dumping the query using toSql() does not include the sequence create query
-
 ## Tests
 
 To run the tests, run `composer test` in your console
