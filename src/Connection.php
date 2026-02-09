@@ -107,63 +107,75 @@ class Connection
 
     public function execute(string $sql, bool $addSemicolon = true, bool $expectResult = true): ResultInterface
     {
-        $startTime = microtime(true);
+        try {
+            $ini = ini_get(static::INI_PCRE_JIT);
 
-        while (true) {
-            $this->throwExceptionIfTimedOut(
-                $startTime,
-                'waiting for remaining output to finish streaming'
-            );
+            ini_set(static::INI_PCRE_JIT, '0');
 
-            $streams = $this->readStdout() . $this->readStderr();
+            $startTime = microtime(true);
 
-            if (empty($streams)) {
-                break;
+            while (true) {
+                $this->throwExceptionIfTimedOut(
+                    $startTime,
+                    'waiting for remaining output to finish streaming'
+                );
+
+                $streams = $this->readStdout() . $this->readStderr();
+
+                if (empty($streams)) {
+                    break;
+                }
+            }
+
+            if ($addSemicolon && !preg_match('/;\s*$/', $sql)) {
+                $sql .= ';';
+            }
+
+            $this->writeStdin($sql);
+
+            if (!$expectResult) {
+                return new EmptyResult();
+            }
+
+            $output = '';
+
+            while (true) {
+                $this->throwExceptionIfTimedOut(
+                    $startTime,
+                    "executing '{$sql}'"
+                );
+
+                $streams = $this->readStdout() . $this->readStderr();
+
+                if (!empty($streams)) {
+                    $output .= $streams;
+                }
+
+                if (!proc_get_status($this->process)['running']) {
+                    throw new DuckDBException('DuckDB process has quit unexpectedly');
+                }
+
+                [$resultOutput, $errorOutput] = $this->hasFinishedGeneratingOutput($output);
+
+                if ($resultOutput !== false) {
+                    $output = $resultOutput;
+
+                    break;
+                }
+
+                if (!empty($errorOutput)) {
+                    throw new DuckDBException($errorOutput);
+                }
+            }
+
+            return $this->parse($output);
+        } catch (Throwable $exception) {
+            throw $exception;
+        } finally {
+            if (!is_bool($ini)) {
+                ini_set(static::INI_PCRE_JIT, $ini);
             }
         }
-
-        if ($addSemicolon && !preg_match('/;\s*$/', $sql)) {
-            $sql .= ';';
-        }
-
-        $this->writeStdin($sql);
-
-        if (!$expectResult) {
-            return new EmptyResult();
-        }
-
-        $output = '';
-
-        while (true) {
-            $this->throwExceptionIfTimedOut(
-                $startTime,
-                "executing '{$sql}'"
-            );
-
-            $streams = $this->readStdout() . $this->readStderr();
-
-            if (!empty($streams)) {
-                $output .= $streams;
-            }
-
-            if (!proc_get_status($this->process)['running']) {
-                throw new DuckDBException('DuckDB process has quit unexpectedly');
-            }
-
-            [$resultOutput, $errorOutput] = $this->hasFinishedGeneratingOutput($output);
-
-            if ($resultOutput !== false) {
-                $output = $resultOutput;
-
-                break;
-            }
-
-            if (!empty($errorOutput)) {
-                throw new DuckDBException($errorOutput);
-            }
-        }
-
-        return $this->parse($output);
     }
 
     private function throwExceptionIfTimedOut(float $startTime, string $reason): void
@@ -179,27 +191,37 @@ class Connection
 
     private function hasFinishedGeneratingOutput(string $output): array
     {
-        try {
-            $ini = ini_get(static::INI_PCRE_JIT);
+        if (
+            (bool) preg_match(
+                self::REGEX_RESULT_OUTPUT,
+                substr($output, -256)
+            )
+        ) {
+            preg_match(
+                self::REGEX_RESULT_OUTPUT,
+                $output,
+                $match
+            );
 
-            ini_set(static::INI_PCRE_JIT, '0');
-
-            if ((bool) preg_match(self::REGEX_RESULT_OUTPUT, $output, $match)) {
-                return [$match[1], false];
-            }
-
-            if ((bool) preg_match(self::REGEX_ERROR_OUTPUT, $output, $match)) {
-                return [false, $match[1]];
-            }
-
-            return [false, false];
-        } catch (Throwable $exception) {
-            throw $exception;
-        } finally {
-            if (!is_bool($ini)) {
-                ini_set(static::INI_PCRE_JIT, $ini);
-            }
+            return [$match[1], false];
         }
+
+        if (
+            (bool) preg_match(
+                self::REGEX_ERROR_OUTPUT,
+                substr($output, 0, 128),
+            )
+        ) {
+            preg_match(
+                self::REGEX_ERROR_OUTPUT,
+                $output,
+                $match
+            );
+
+            return [false, $match[1]];
+        }
+
+        return [false, false];
     }
 
     protected function writeStdin(string $string): void

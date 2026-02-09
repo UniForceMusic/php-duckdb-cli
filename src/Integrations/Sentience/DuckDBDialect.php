@@ -55,7 +55,7 @@ class DuckDBDialect extends PgSQLDialect
         }
 
         $query .= sprintf(
-            'REGEXP_MATCHES(%s, %s, %s)',
+            'regexp_matches(%s, %s, %s)',
             $this->escapeIdentifier($condition->identifier),
             $this->buildQuestionMarks($params, $condition->value[0]),
             $this->buildQuestionMarks($params, $condition->value[1])

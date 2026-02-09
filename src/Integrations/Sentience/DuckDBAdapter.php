@@ -10,7 +10,6 @@ use Sentience\Database\Queries\Objects\QueryWithParams;
 use Sentience\Database\Sockets\SocketAbstract;
 use UniForceMusic\PHPDuckDBCLI\DuckDB;
 use UniForceMusic\PHPDuckDBCLI\Mode;
-use UniForceMusic\PHPDuckDBCLI\PreparedStatement;
 
 class DuckDBAdapter extends AdapterAbstract
 {
@@ -82,7 +81,7 @@ class DuckDBAdapter extends AdapterAbstract
 
     public function queryWithParams(DialectInterface $dialect, QueryWithParams $queryWithParams, bool $emulatePrepare): DuckDBResult
     {
-        $query = $queryWithParams->namedParamsToQuestionMarks()->toSql($dialect);
+        $query = $queryWithParams->toSql($dialect);
 
         return $this->query($query);
     }
@@ -113,17 +112,6 @@ class DuckDBAdapter extends AdapterAbstract
             return null;
         }
 
-        return $this->query(
-            sprintf(
-                "SELECT currval('%s');",
-                strtr(
-                    $name,
-                    [
-                        ...PreparedStatement::ESCAPE_CHARS,
-                        "'" => "''"
-                    ]
-                )
-            )
-        )->scalar();
+        return $this->query("SELECT currval('{$name}');", )->scalar();
     }
 }
