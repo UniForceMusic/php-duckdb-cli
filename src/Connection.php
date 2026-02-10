@@ -15,7 +15,7 @@ class Connection
     public const int PIPE_STDOUT = 1;
     public const int PIPE_STDERR = 2;
     public const string INI_PCRE_JIT = 'pcre.jit';
-    public const string REGEX_RESULT_OUTPUT = '/([\S\s]*?)\s*changes\:\s*[0-9]+\s*total_changes\:\s*[0-9]+\s*$/m';
+    public const string REGEX_RESULT_OUTPUT = '/[\S\s]*?(\s*changes\:\s*[0-9]+\s*total_changes\:\s*[0-9]+\s*)$/m';
     public const string REGEX_ERROR_OUTPUT = '/^([A-Za-z\-\_\s]*Error\:?[\S\s]+)$/im';
 
     private mixed $process;
@@ -194,22 +194,19 @@ class Connection
         if (
             (bool) preg_match(
                 self::REGEX_RESULT_OUTPUT,
-                substr($output, -256)
+                substr($output, -128),
+                $match
             )
         ) {
-            preg_match(
-                self::REGEX_RESULT_OUTPUT,
-                $output,
-                $match
-            );
+            $length = mb_strlen($match[1]);
 
-            return [$match[1], false];
+            return [mb_substr($output, 0, $length * -1), false];
         }
 
         if (
             (bool) preg_match(
                 self::REGEX_ERROR_OUTPUT,
-                substr($output, 0, 128),
+                substr($output, 0, 256),
             )
         ) {
             preg_match(
