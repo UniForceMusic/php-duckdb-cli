@@ -47,6 +47,11 @@ class DuckDBAdapter extends AdapterAbstract
         );
     }
 
+    public function dotCommand(string $command): void
+    {
+        $this->duckdb->dotCommand($command);
+    }
+
     public function exec(string $query): void
     {
         $start = microtime(true);

@@ -5,7 +5,6 @@ namespace UniForceMusic\PHPDuckDBCLI\Integrations\Sentience;
 use Closure;
 use Sentience\Database\Databases\DatabaseAbstract;
 use Sentience\Database\Queries\Objects\Raw;
-use Sentience\Database\Queries\SelectQuery;
 
 class DuckDBDatabase extends DatabaseAbstract
 {
@@ -61,8 +60,19 @@ class DuckDBDatabase extends DatabaseAbstract
         return new static($adapter, $dialect);
     }
 
-    public function lastInsertId(string|null $name = null): null|int|string
+    public function dotCommand(string $command): void
     {
+        /** @var DuckDBAdapter $this->adapter */
+
+        $this->adapter->dotCommand($command);
+    }
+
+    public function lastInsertId(null|string $name = null): null|int|string
+    {
+        if (!$name) {
+            return null;
+        }
+
         $escapedName = substr(
             $this->dialect->escapeString($name),
             1,
