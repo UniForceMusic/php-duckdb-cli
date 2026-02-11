@@ -54,6 +54,13 @@ class DuckDB
 
     public function dotCommand(string $command): void
     {
+        /**
+         * The integration relies on a statement or query finishing with "changes: [0-9]+ total_changes: [0-9]+".
+         */
+        if (strtolower($command) == '.changes off') {
+            return;
+        }
+
         $this->connection->execute($command, false, false);
     }
 
