@@ -34,11 +34,13 @@ class CreateTableQuery extends \Sentience\Database\Queries\CreateTableQuery
                         continue;
                     }
 
+                    $sequence = $sequences[$column->name];
+
                     $column->type = $bigIntType;
                     $column->default = Query::raw(
                         sprintf(
-                            'NEXTVAL(%s)',
-                            $this->dialect->escapeString($sequences[$column->name])
+                            'nextval(%s)',
+                            $this->dialect->escapeString($sequence)
                         )
                     );
                     $column->generatedByDefaultAsIdentity = false;
@@ -105,7 +107,7 @@ class CreateTableQuery extends \Sentience\Database\Queries\CreateTableQuery
 
     protected function isSerialColumn(Column $column): bool
     {
-        return $column->generatedByDefaultAsIdentity || str_contains(strtoupper($column->name), 'SERIAL');
+        return $column->generatedByDefaultAsIdentity || str_contains(strtoupper($column->type), 'SERIAL');
     }
 
     protected function getTable(string|array|Raw $table): string
