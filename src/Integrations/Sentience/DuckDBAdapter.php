@@ -117,6 +117,6 @@ class DuckDBAdapter extends AdapterAbstract
             return null;
         }
 
-        return $this->query("SELECT currval('{$name}');", )->scalar();
+        return $this->query("SELECT currval('{$name}')", )->scalar();
     }
 }
