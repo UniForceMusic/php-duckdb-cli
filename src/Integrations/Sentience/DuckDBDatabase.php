@@ -25,6 +25,8 @@ class DuckDBDatabase extends DatabaseAbstract
         array $options = [],
         ?Closure $debug = null,
     ): static {
+        $driver = new DuckDBDriver();
+
         $adapter = new DuckDBAdapter(
             $file,
             null,
@@ -35,7 +37,7 @@ class DuckDBDatabase extends DatabaseAbstract
 
         $version = $adapter->version();
 
-        $dialect = new DuckDBDialect($version);
+        $dialect = new DuckDBDialect($driver, $version);
 
         return new static($adapter, $dialect);
     }
@@ -45,6 +47,8 @@ class DuckDBDatabase extends DatabaseAbstract
         array $options = [],
         ?Closure $debug = null,
     ): static {
+        $driver = new DuckDBDriver();
+
         $adapter = new DuckDBAdapter(
             null,
             null,
@@ -55,7 +59,7 @@ class DuckDBDatabase extends DatabaseAbstract
 
         $version = $adapter->version();
 
-        $dialect = new DuckDBDialect($version);
+        $dialect = new DuckDBDialect($driver, $version);
 
         return new static($adapter, $dialect);
     }

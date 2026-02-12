@@ -12,6 +12,7 @@ class DuckDB
 
     private Connection $connection;
     private bool $inTransation = false;
+    private array $preparedStatementHashes = [];
 
     public static function memory(Mode $mode = Mode::JSON, string $binary = self::BINARY): static
     {
@@ -76,7 +77,35 @@ class DuckDB
 
     public function prepared(string $query, array $params = []): ResultInterface
     {
-        return $this->query((new PreparedStatement($query, $params))->toSql());
+        $preparedStatement = new PreparedStatement($query, $params);
+
+        if (!str_starts_with(strtoupper($query), 'SELECT')) {
+            return $this->query($preparedStatement->toSql());
+        }
+
+        $queryHash = md5($query);
+
+        if (array_key_exists($queryHash, $this->preparedStatementHashes)) {
+            $this->query(
+                sprintf(
+                    'EXECUTE "%s"(%s)',
+                    $queryHash,
+                    $preparedStatement->getPreparedParams()
+                )
+            );
+        }
+
+        $this->preparedStatementHashes[$queryHash] = $query;
+
+        return $this->query(
+            sprintf(
+                'PREPARE "%s" AS (%s); EXECUTE "%s"(%s)',
+                $queryHash,
+                $query,
+                $queryHash,
+                $preparedStatement->getPreparedParams()
+            )
+        );
     }
 
     public function beginTransation(): void

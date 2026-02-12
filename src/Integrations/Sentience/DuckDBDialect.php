@@ -4,6 +4,7 @@ namespace UniForceMusic\PHPDuckDBCLI\Integrations\Sentience;
 
 use Sentience\Database\Dialects\PgSQLDialect;
 use Sentience\Database\Driver;
+use Sentience\Database\DriverInterface;
 use Sentience\Database\Queries\Enums\ConditionEnum;
 use Sentience\Database\Queries\Enums\TypeEnum;
 use Sentience\Database\Queries\Objects\Condition;
@@ -11,8 +12,12 @@ use Sentience\Database\Queries\Objects\QueryWithParams;
 
 class DuckDBDialect extends PgSQLDialect
 {
-    public function __construct(protected int|string $duckDbVersion)
+    public function __construct(DriverInterface $driver, protected int|string $duckDbVersion)
     {
+        parent::__construct($driver, $duckDbVersion);
+
+        $this->duckDbVersion = $this->version;
+
         parent::__construct(Driver::PGSQL, '10.0');
     }
 

@@ -87,6 +87,14 @@ class PreparedStatement
         $this->params = $params;
     }
 
+    public function getPreparedParams(): array
+    {
+        return array_map(
+            fn(mixed $param): string => $this->compileValueToSQL($param),
+            $this->params
+        );
+    }
+
     private function toSqlQuestionMarks(array $params): string
     {
         $index = 0;
