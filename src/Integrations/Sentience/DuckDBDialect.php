@@ -23,11 +23,18 @@ class DuckDBDialect extends PgSQLDialect
 
     public function createSequence(
         bool $ifNotExists,
+        bool $orReplace,
         string $name
     ): QueryWithParams {
-        $query = 'CREATE SEQUENCE';
+        $query = 'CREATE';
 
-        if ($ifNotExists) {
+        if ($orReplace) {
+            $query .= ' OR REPLACE';
+        }
+
+        $query .= ' SEQUENCE';
+
+        if ($ifNotExists && !$orReplace) {
             $query .= ' IF NOT EXISTS';
         }
 

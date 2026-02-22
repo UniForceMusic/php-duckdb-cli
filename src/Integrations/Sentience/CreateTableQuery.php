@@ -15,6 +15,8 @@ use Sentience\Database\Results\ResultInterface;
  */
 class CreateTableQuery extends \Sentience\Database\Queries\CreateTableQuery
 {
+    protected bool $createOrReplaceSequences = false;
+
     public function execute(bool $emulatePrepare = false): ResultInterface
     {
         return $this->database->transaction(
@@ -99,7 +101,11 @@ class CreateTableQuery extends \Sentience\Database\Queries\CreateTableQuery
         $queries = [];
 
         foreach ($sequences as $sequence) {
-            $queries[] = $this->dialect->createSequence($this->ifNotExists, $sequence);
+            $queries[] = $this->dialect->createSequence(
+                $this->ifNotExists,
+                $this->createOrReplaceSequences,
+                $sequence
+            );
         }
 
         return $queries;
@@ -121,5 +127,12 @@ class CreateTableQuery extends \Sentience\Database\Queries\CreateTableQuery
         }
 
         return $this->table;
+    }
+
+    public function createOrReplaceSequences(): static
+    {
+        $this->createOrReplaceSequences = true;
+
+        return $this;
     }
 }

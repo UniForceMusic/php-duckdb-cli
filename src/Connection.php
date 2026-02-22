@@ -22,7 +22,7 @@ class Connection
     private array $pipes = [];
     private ?int $timeout = null;
 
-    public function __construct(string $binary, ?string $file, bool $readOnly, private Mode $mode)
+    public function __construct(string $binary, ?string $file, bool $readOnly, private Mode $mode, bool $safe = true)
     {
         $command = sprintf(
             '%s -noheader',
@@ -35,6 +35,10 @@ class Connection
 
         if ($mode == Mode::JSON) {
             $command .= ' -json';
+        }
+
+        if ($safe) {
+            $command .= ' -safe';
         }
 
         if ($file) {

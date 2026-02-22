@@ -14,23 +14,24 @@ class DuckDB
     private bool $inTransation = false;
     private array $preparedStatementHashes = [];
 
-    public static function memory(Mode $mode = Mode::JSON, string $binary = self::BINARY): static
+    public static function memory(Mode $mode = Mode::JSON, bool $safe = true, string $binary = self::BINARY): static
     {
-        return new static(null, false, $mode, $binary);
+        return new static(null, false, $mode, $safe, $binary);
     }
 
-    public static function file(string $file, bool $readOnly = false, Mode $mode = Mode::JSON, string $binary = self::BINARY): static
+    public static function file(string $file, bool $readOnly = false, Mode $mode = Mode::JSON, bool $safe = true, string $binary = self::BINARY): static
     {
-        return new static($file, $readOnly, $mode, $binary);
+        return new static($file, $readOnly, $mode, $safe, $binary);
     }
 
     public function __construct(
         ?string $file = null,
         bool $readOnly = false,
         Mode $mode = Mode::JSON,
+        bool $safe = true,
         string $binary = self::BINARY
     ) {
-        $this->connection = new Connection($binary, $file, $readOnly, $mode);
+        $this->connection = new Connection($binary, $file, $readOnly, $mode, $safe);
     }
 
     public function removeTimeout(): void
@@ -79,14 +80,14 @@ class DuckDB
     {
         $preparedStatement = new PreparedStatement($query, $params);
 
-        if (!str_starts_with(strtoupper($query), 'SELECT')) {
+        if (!preg_match('/^\s*SELECT/i', $query)) {
             return $this->query($preparedStatement->toSql());
         }
 
         $queryHash = md5($query);
 
         if (array_key_exists($queryHash, $this->preparedStatementHashes)) {
-            $this->query(
+            return $this->query(
                 sprintf(
                     'EXECUTE "%s"(%s)',
                     $queryHash,

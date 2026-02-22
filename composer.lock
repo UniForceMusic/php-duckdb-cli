@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "sentience/database",
-            "version": "v2.2.0",
+            "version": "v2.2.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Sentience-Framework/database.git",
-                "reference": "0ba699ada751c5312ca5f6a01af25864a5e02399"
+                "reference": "cf8669d294c96fea173afe46c1f49eb8e2d87e49"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Sentience-Framework/database/zipball/0ba699ada751c5312ca5f6a01af25864a5e02399",
-                "reference": "0ba699ada751c5312ca5f6a01af25864a5e02399",
+                "url": "https://api.github.com/repos/Sentience-Framework/database/zipball/cf8669d294c96fea173afe46c1f49eb8e2d87e49",
+                "reference": "cf8669d294c96fea173afe46c1f49eb8e2d87e49",
                 "shasum": ""
             },
             "require": {
@@ -33,9 +33,9 @@
             "description": "The database connector for the Sentience framework",
             "support": {
                 "issues": "https://github.com/Sentience-Framework/database/issues",
-                "source": "https://github.com/Sentience-Framework/database/tree/v2.2.0"
+                "source": "https://github.com/Sentience-Framework/database/tree/v2.2.2"
             },
-            "time": "2026-02-12T16:01:34+00:00"
+            "time": "2026-02-22T22:59:31+00:00"
         }
     ],
     "packages-dev": [

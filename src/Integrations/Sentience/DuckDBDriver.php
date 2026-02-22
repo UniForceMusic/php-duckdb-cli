@@ -32,6 +32,6 @@ class DuckDBDriver implements DriverInterface
 
     public function getDialect(int|string $version): DuckDBDialect
     {
-        return new DuckDBDialect($version);
+        return new DuckDBDialect($this, $version);
     }
 }

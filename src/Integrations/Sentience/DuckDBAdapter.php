@@ -16,6 +16,7 @@ class DuckDBAdapter extends AdapterAbstract
     public const string OPTIONS_DUCKDB_BINARY = 'binary';
     public const string OPTIONS_DUCKDB_READ_ONLY = 'read_only';
     public const string OPTIONS_DUCKDB_MODE = 'mode';
+    public const string OPTIONS_DUCKDB_SAFE = 'safe';
     public const string OPTIONS_DUCKDB_TIMEOUT = 'timeout';
 
     protected DuckDB $duckdb;
@@ -31,6 +32,7 @@ class DuckDBAdapter extends AdapterAbstract
             $name,
             (bool) ($options[static::OPTIONS_DUCKDB_READ_ONLY] ?? false),
             Mode::from($options[static::OPTIONS_DUCKDB_MODE] ?? Mode::JSON->value),
+            (bool) ($options[static::OPTIONS_DUCKDB_SAFE] ?? true),
             (string) ($options[static::OPTIONS_DUCKDB_BINARY] ?? DuckDB::BINARY)
         );
 
