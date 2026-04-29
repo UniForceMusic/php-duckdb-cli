@@ -30,8 +30,8 @@ class DuckDBDriver implements DriverInterface
         );
     }
 
-    public function getDialect(int|string $version): DuckDBDialect
+    public function getDialect(int|string $version, array $options = []): DuckDBDialect
     {
-        return new DuckDBDialect($this, $version);
+        return new DuckDBDialect($this, $version, $options);
     }
 }

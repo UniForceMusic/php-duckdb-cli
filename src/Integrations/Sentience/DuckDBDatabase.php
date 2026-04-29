@@ -4,6 +4,7 @@ namespace UniForceMusic\PHPDuckDBCLI\Integrations\Sentience;
 
 use Closure;
 use Sentience\Database\Databases\DatabaseAbstract;
+use Sentience\Database\Queries\Interfaces\Sql;
 use Sentience\Database\Queries\Objects\Raw;
 
 class DuckDBDatabase extends DatabaseAbstract
@@ -15,11 +16,11 @@ class DuckDBDatabase extends DatabaseAbstract
         ?Closure $debug = null,
     ): static {
         return $file
-            ? static::fromFile($file, $queries, $options, $debug)
+            ? static::file($file, $queries, $options, $debug)
             : static::memory($queries, $options, $debug);
     }
 
-    public static function fromFile(
+    public static function file(
         string $file,
         array $queries = [],
         array $options = [],
@@ -37,7 +38,7 @@ class DuckDBDatabase extends DatabaseAbstract
 
         $version = $adapter->version();
 
-        $dialect = new DuckDBDialect($driver, $version);
+        $dialect = new DuckDBDialect($driver, $version, $options);
 
         return new static($adapter, $dialect);
     }
@@ -59,7 +60,7 @@ class DuckDBDatabase extends DatabaseAbstract
 
         $version = $adapter->version();
 
-        $dialect = new DuckDBDialect($driver, $version);
+        $dialect = new DuckDBDialect($driver, $version, $options);
 
         return new static($adapter, $dialect);
     }
@@ -86,12 +87,12 @@ class DuckDBDatabase extends DatabaseAbstract
         return $this->adapter->lastInsertId($escapedName);
     }
 
-    public function insert(string|array|Raw $table): InsertQuery
+    public function insert(string|array|Sql $table): InsertQuery
     {
         return new InsertQuery($this, $this->dialect, $table);
     }
 
-    public function createTable(array|string|Raw $table): CreateTableQuery
+    public function createTable(array|string|Sql $table): CreateTableQuery
     {
         return new CreateTableQuery($this, $this->dialect, $table);
     }

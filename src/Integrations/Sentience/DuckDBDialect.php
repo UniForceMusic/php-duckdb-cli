@@ -12,13 +12,13 @@ use Sentience\Database\Queries\Objects\QueryWithParams;
 
 class DuckDBDialect extends PgSQLDialect
 {
-    public function __construct(DriverInterface $driver, protected int|string $duckDbVersion)
+    public function __construct(DriverInterface $driver, protected int|string $duckDbVersion, array $options)
     {
-        parent::__construct($driver, $duckDbVersion);
+        parent::__construct($driver, $duckDbVersion, $options);
 
         $this->duckDbVersion = $this->version;
 
-        parent::__construct(Driver::PGSQL, '10.0');
+        parent::__construct(Driver::PGSQL, '10.0', $options);
     }
 
     public function createSequence(
